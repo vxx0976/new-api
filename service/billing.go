@@ -49,6 +49,15 @@ func PreConsumeBilling(c *gin.Context, preConsumedQuota int, relayInfo *relaycom
 // SettleBilling 执行计费结算。如果 RelayInfo 上有 BillingSession 则通过 session 结算，
 // 否则回退到旧的 PostConsumeQuota 路径（兼容按次计费等场景）。
 func SettleBilling(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, actualQuota int) error {
+	// 代理分润在这里计提：SettleBilling 是两条结算路径（BillingSession 与回退的
+	// PostConsumeQuota）唯一共同的漏斗，且 actualQuota 是本次的最终扣款额而非差额。
+	// 挂在 PostConsumeQuota 上会漏掉 BillingSession 这条主路径——它压根不经过那里。
+	defer func() {
+		if actualQuota > 0 {
+			RecordAgentConsumeEarnings(relayInfo, actualQuota)
+		}
+	}()
+
 	if relayInfo.Billing != nil {
 		preConsumed := relayInfo.Billing.GetPreConsumedQuota()
 		delta := actualQuota - preConsumed

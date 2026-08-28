@@ -131,3 +131,14 @@ func GetUserGroupRatio(userGroup, group string) float64 {
 	}
 	return ratio_setting.GetGroupRatio(group)
 }
+
+// GetUserGroupRatioForUser 是展示口径的倍率，用于模型广场与定价页。
+//
+// 必须和计费口径走同一个解析器：展示价与实扣价不一致会直接变成客诉，
+// 而代理体系下终端用户看到的本来就该是其归属代理的售价，不是主站价。
+func GetUserGroupRatioForUser(userId int, userGroup, group string) float64 {
+	if ratio, ok := AgentGroupRatio(userId, group); ok {
+		return ratio
+	}
+	return GetUserGroupRatio(userGroup, group)
+}

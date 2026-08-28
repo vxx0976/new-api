@@ -14,6 +14,7 @@ import (
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/oauth"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/console_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
@@ -66,6 +67,7 @@ func GetStatus(c *gin.Context) {
 		"theme":                       "default",
 		"system_name":                 common.SystemName,
 		"logo":                        common.Logo,
+		"agent_site":                  false,
 		"footer_html":                 common.Footer,
 		"wechat_qrcode":               common.WeChatAccountQRCodeImageURL,
 		"wechat_login":                common.WeChatAuthEnabled,
@@ -164,6 +166,26 @@ func GetStatus(c *gin.Context) {
 		data["custom_oauth_providers"] = providersInfo
 	}
 
+	// 白标：命中代理域名时用该代理的品牌覆盖主站品牌。
+	// 前端不需要改渲染逻辑，只是拿到的值变了。
+	if agentId := common.GetContextKeyInt(c, constant.ContextKeyAgentId); agentId > 0 {
+		if branding, ok := service.GetAgentSiteBranding(agentId, c.Request.Host); ok {
+			data["agent_site"] = true
+			data["agent_id"] = branding.AgentId
+			if branding.SiteName != "" {
+				data["system_name"] = branding.SiteName
+			}
+			if branding.SiteLogo != "" {
+				data["logo"] = branding.SiteLogo
+			}
+			data["brand_color"] = branding.BrandColor
+			data["custom_css"] = branding.CustomCss
+			data["seo_title"] = branding.SeoTitle
+			data["seo_description"] = branding.SeoDescription
+			data["seo_keywords"] = branding.SeoKeywords
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
@@ -224,6 +246,12 @@ func GetMidjourney(c *gin.Context) {
 }
 
 func GetHomePageContent(c *gin.Context) {
+	if agentId := common.GetContextKeyInt(c, constant.ContextKeyAgentId); agentId > 0 {
+		if branding, ok := service.GetAgentSiteBranding(agentId, c.Request.Host); ok && branding.HomeContent != "" {
+			c.JSON(http.StatusOK, gin.H{"success": true, "message": "", "data": branding.HomeContent})
+			return
+		}
+	}
 	common.OptionMapRWMutex.RLock()
 	defer common.OptionMapRWMutex.RUnlock()
 	c.JSON(http.StatusOK, gin.H{

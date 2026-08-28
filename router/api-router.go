@@ -17,6 +17,8 @@ func SetApiRouter(router *gin.Engine) {
 	apiRouter.Use(gzip.Gzip(gzip.DefaultCompression))
 	apiRouter.Use(middleware.BodyStorageCleanup()) // 清理请求体存储
 	apiRouter.Use(middleware.GlobalAPIRateLimit())
+	// 白标域名解析：按 Host 把代理 id 注入 context，供品牌展示与注册归属使用。
+	apiRouter.Use(middleware.AgentDomainResolver())
 	anonymousRequestBodyLimit := middleware.AnonymousRequestBodyLimit()
 	{
 		apiRouter.GET("/setup", controller.GetSetup)
@@ -153,6 +155,39 @@ func SetApiRouter(router *gin.Engine) {
 		}
 
 		// Subscription billing (plans, purchase, admin management)
+		// 代理体系。开通下级是所有权式鉴权（只有上级代理本人能开自己的下级），
+		// 不走 AdminAuth；平台直属代理才由管理员在 /agent/admin 下开通。
+		agentRoute := apiRouter.Group("/agent")
+		agentRoute.Use(middleware.UserAuth())
+		{
+			agentRoute.GET("/self", controller.GetSelfAgent)
+			agentRoute.GET("/children", controller.GetChildAgents)
+			agentRoute.POST("/children", middleware.CriticalRateLimit(), controller.CreateSubAgent)
+			agentRoute.GET("/pricing", controller.GetSelfAgentPricing)
+			agentRoute.PUT("/pricing/sell", middleware.CriticalRateLimit(), controller.SetSelfAgentSellRate)
+			agentRoute.GET("/children/:id/pricing", controller.GetChildAgentPricing)
+			agentRoute.PUT("/children/:id/pricing/cost", middleware.CriticalRateLimit(), controller.SetChildAgentCostRate)
+			agentRoute.GET("/domains", controller.GetAgentDomains)
+			agentRoute.POST("/domains", middleware.CriticalRateLimit(), controller.BindAgentDomain)
+			agentRoute.POST("/domains/:id/verify", middleware.CriticalRateLimit(), controller.VerifyAgentDomain)
+			agentRoute.PUT("/domains/:id/branding", controller.UpdateAgentDomainBranding)
+			agentRoute.DELETE("/domains/:id", middleware.CriticalRateLimit(), controller.UnbindAgentDomain)
+			agentRoute.GET("/ledger", controller.GetAgentLedger)
+			agentRoute.GET("/withdraw", controller.GetAgentWithdraws)
+			agentRoute.POST("/withdraw", middleware.CriticalRateLimit(), controller.CreateAgentWithdraw)
+		}
+		agentAdminRoute := apiRouter.Group("/agent/admin")
+		agentAdminRoute.Use(middleware.AdminAuth())
+		{
+			agentAdminRoute.POST("/", middleware.CriticalRateLimit(), controller.CreatePlatformAgent)
+			agentAdminRoute.PUT("/pricing/cost", middleware.CriticalRateLimit(), controller.SetPlatformAgentCostRate)
+			agentAdminRoute.POST("/freeze", middleware.CriticalRateLimit(), controller.FreezeAgent)
+			agentAdminRoute.POST("/unfreeze", middleware.CriticalRateLimit(), controller.UnfreezeAgent)
+			agentAdminRoute.POST("/promote", middleware.CriticalRateLimit(), controller.PromoteAgentChildren)
+			agentAdminRoute.GET("/withdraw/pending", controller.GetPendingAgentWithdraws)
+			agentAdminRoute.PUT("/withdraw/:id/review", middleware.CriticalRateLimit(), controller.ReviewAgentWithdraw)
+		}
+
 		subscriptionRoute := apiRouter.Group("/subscription")
 		subscriptionRoute.Use(middleware.UserAuth())
 		{

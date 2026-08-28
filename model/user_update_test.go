@@ -2,6 +2,8 @@ package model
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
@@ -125,6 +127,38 @@ func TestUpdateUserAccessTokenRejectsSoftDeletedUser(t *testing.T) {
 	var got User
 	require.NoError(t, DB.Unscoped().First(&got, user.Id).Error)
 	assert.Equal(t, "old-token", got.GetAccessToken())
+}
+
+// 访问令牌是变长的：GenerateAccessToken 产生 29~32 位。
+// 列一旦声明成 char(n)，PostgreSQL 会把值空格补齐到固定宽度并原样读回，
+// 于是三成以上的令牌带着尾随空格发给用户。这里把整个生成区间都钉住。
+func TestUserAccessTokenRoundTripsWithoutPadding(t *testing.T) {
+	setupUserUpdateTestState(t)
+
+	for i, length := range []int{29, 30, 31, 32} {
+		token := strings.Repeat("t", length)
+		user := User{
+			Id:       100 + i,
+			Username: fmt.Sprintf("token-len-%d", length),
+			Password: "password",
+			Status:   common.UserStatusEnabled,
+			AffCode:  fmt.Sprintf("aff-len-%d", length), // aff_code 有唯一索引，循环里不能都留空
+		}
+		user.SetAccessToken(token)
+		require.NoError(t, DB.Create(&user).Error)
+
+		var got User
+		require.NoError(t, DB.First(&got, user.Id).Error)
+		assert.Equal(t, token, got.GetAccessToken(),
+			"长度 %d 的令牌读回后必须一字不差，不能被补齐", length)
+		assert.Len(t, got.GetAccessToken(), length)
+
+		// 按令牌查用户是鉴权路径，补齐过的值会让这里查不到人。
+		found, err := ValidateAccessToken(token)
+		require.NoError(t, err, "长度 %d 的令牌必须能查回用户", length)
+		require.NotNil(t, found, "长度 %d 的令牌必须能查回用户", length)
+		assert.Equal(t, user.Id, found.Id)
+	}
 }
 
 func TestUpdateUserSettingOnlyUpdatesSetting(t *testing.T) {

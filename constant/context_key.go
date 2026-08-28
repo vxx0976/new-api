@@ -53,6 +53,9 @@ const (
 	ContextKeyUsingGroup  ContextKey = "group"
 	ContextKeyUserName    ContextKey = "username"
 
+	// ContextKeyAgentId 由白标域名中间件按 Host 解析出的代理 id，0/缺失表示主站。
+	ContextKeyAgentId ContextKey = "agent_id"
+
 	ContextKeyLocalCountTokens ContextKey = "local_count_tokens"
 
 	ContextKeySystemPromptOverride ContextKey = "system_prompt_override"

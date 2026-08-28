@@ -10,6 +10,7 @@ import (
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -65,6 +66,14 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) hostty
 	} else {
 		// normal group ratio
 		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
+	}
+
+	// 代理定价优先于全局分组倍率。这里是一次请求里最早的定价点，
+	// 链路快照通常在此解析并挂到 relayInfo 上，供后续预扣费与结算复用。
+	if chain := service.EnsureAgentPricing(relayInfo); chain.Applies {
+		groupRatioInfo.GroupRatio = chain.PaidRate
+		groupRatioInfo.GroupSpecialRatio = chain.PaidRate
+		groupRatioInfo.HasSpecialRatio = true
 	}
 
 	return groupRatioInfo

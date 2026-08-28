@@ -17,24 +17,53 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func TestMain(m *testing.M) {
+// openTestDB 默认用内存 SQLite；设了 TEST_PG_DSN 就跑真实 PostgreSQL。
+//
+// 代理分润与提现依赖 lockForUpdate 和 clause.OnConflict，前者在 SQLite 上是空操作、
+// 只有 MySQL/PostgreSQL 才真正发 FOR UPDATE，后者两边生成的 SQL 也不同。
+// 资金路径只在 SQLite 上跑等于没验，所以留这个开关按真实数据库复跑同一套用例。
+func openTestDB() *gorm.DB {
+	if dsn := os.Getenv("TEST_PG_DSN"); dsn != "" {
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			panic("failed to open postgres test db: " + err.Error())
+		}
+		common.SetDatabaseTypes(common.DatabaseTypePostgreSQL, common.DatabaseTypePostgreSQL)
+		return db
+	}
+	if dsn := os.Getenv("TEST_MYSQL_DSN"); dsn != "" {
+		db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		if err != nil {
+			panic("failed to open mysql test db: " + err.Error())
+		}
+		common.SetDatabaseTypes(common.DatabaseTypeMySQL, common.DatabaseTypeMySQL)
+		return db
+	}
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		panic("failed to open test db: " + err.Error())
 	}
+	common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic("failed to get sql.DB: " + err.Error())
 	}
+	// 内存库靠单连接共享，多连接会各看各的空库。
 	sqlDB.SetMaxOpenConns(1)
+	return db
+}
+
+func TestMain(m *testing.M) {
+	db := openTestDB()
 
 	model.DB = db
 	model.LOG_DB = db
 
-	common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)
 	common.RedisEnabled = false
 	common.BatchUpdateEnabled = false
 	common.LogConsumeEnabled = true
@@ -49,6 +78,14 @@ func TestMain(m *testing.M) {
 		&model.UserSubscription{},
 		&model.SystemTask{},
 		&model.SystemTaskLock{},
+		&model.Agent{},
+		&model.AgentDomain{},
+		&model.AgentGroupCost{},
+		&model.AgentGroupSell{},
+		&model.AgentEarningsOutbox{},
+		&model.AgentLedger{},
+		&model.AgentWithdrawRequest{},
+		&model.AgentAuditLog{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}

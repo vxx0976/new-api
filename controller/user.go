@@ -268,6 +268,8 @@ func Register(c *gin.Context) {
 		DisplayName: user.Username,
 		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
+		// 白标：从哪个域名注册就归属哪个代理，决定这个用户之后按谁的价计费。
+		ParentAgentId: common.GetContextKeyInt(c, constant.ContextKeyAgentId),
 	}
 	if common.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
@@ -691,6 +693,10 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 	updatedUser.Role = originUser.Role
+	// 归属代理决定该用户的定价链路，不能顺着这个通用更新接口被改写。
+	// EditWithTx 走 Updates(struct) 会忽略零值，因此只要请求体里带了非零值就会生效。
+	// 转移归属需要走代理体系自己的接口，在那里做防环与价格重算。
+	updatedUser.ParentAgentId = originUser.ParentAgentId
 	myRole := c.GetInt("role")
 	if !canManageTargetRole(myRole, originUser.Role) {
 		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionHigherLevel)

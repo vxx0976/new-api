@@ -363,6 +363,9 @@ func InitResources() error {
 	}
 
 	service.StartAuthArtifactCleanup()
+	service.StartAgentEarningsSettleTask()
+	// service 不反向依赖 middleware，改域名后的缓存失效通过这个钩子回调。
+	service.InvalidateAgentDomainCacheHook = middleware.InvalidateAgentDomainCache
 
 	return nil
 }

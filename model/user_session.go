@@ -40,12 +40,15 @@ var (
 // RefreshHash values are HMAC digests supplied by the service layer; opaque
 // refresh secrets are never persisted.
 type UserSession struct {
-	SID                 string `json:"sid" gorm:"column:sid;type:varchar(64);primaryKey"`
-	UserID              int    `json:"user_id" gorm:"column:user_id;not null;index:idx_user_sessions_user_status_expiry,priority:1;index:idx_user_sessions_user_created,priority:1"`
-	Version             int64  `json:"version" gorm:"type:bigint;not null;default:1"`
-	UserAuthVersion     int64  `json:"user_auth_version" gorm:"type:bigint;not null"`
-	Status              string `json:"status" gorm:"type:varchar(16);not null;index:idx_user_sessions_user_status_expiry,priority:2;index:idx_user_sessions_status_revoked,priority:1"`
-	RefreshHash         string `json:"-" gorm:"type:char(64);not null"`
+	SID             string `json:"sid" gorm:"column:sid;type:varchar(64);primaryKey"`
+	UserID          int    `json:"user_id" gorm:"column:user_id;not null;index:idx_user_sessions_user_status_expiry,priority:1;index:idx_user_sessions_user_created,priority:1"`
+	Version         int64  `json:"version" gorm:"type:bigint;not null;default:1"`
+	UserAuthVersion int64  `json:"user_auth_version" gorm:"type:bigint;not null"`
+	Status          string `json:"status" gorm:"type:varchar(16);not null;index:idx_user_sessions_user_status_expiry,priority:2;index:idx_user_sessions_status_revoked,priority:1"`
+	// 与下面的 PreviousRefreshHash 保持一致用 varchar：char(n) 只有在每次写入都恰好 n 字符时才安全，
+	// 而 PostgreSQL 会把不足 n 的值空格补齐并原样读回。当前写入的是 64 位 HMAC hex 正好填满，
+	// 但这个不变量太脆——users.access_token 就是这么被咬的。
+	RefreshHash         string `json:"-" gorm:"type:varchar(64);not null"`
 	PreviousRefreshHash string `json:"-" gorm:"type:varchar(64)"`
 	PreviousValidUntil  int64  `json:"-" gorm:"type:bigint;not null;default:0"`
 	LoginMethod         string `json:"login_method" gorm:"type:varchar(32);not null"`

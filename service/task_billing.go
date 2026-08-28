@@ -312,6 +312,11 @@ func RecalculateTaskQuotaByTokens(ctx context.Context, task *model.Task, totalTo
 	} else {
 		finalGroupRatio = groupRatio
 	}
+	// 任务计费（MJ / 视频 / 音频）与 relay 计费必须同价，
+	// 漏接这里会让这条线的消费完全不参与代理定价与分润。
+	if agentRate, ok := AgentGroupRatio(task.UserId, group); ok {
+		finalGroupRatio = agentRate
+	}
 
 	// 计算 OtherRatios 乘积（视频折扣、时长等）
 	otherMultiplier := 1.0

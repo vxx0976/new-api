@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/i18n"
 	"github.com/QuantumNous/new-api/middleware"
 	"github.com/QuantumNous/new-api/model"
@@ -365,6 +366,9 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	}
 	user.Role = common.RoleCommonUser
 	user.Status = common.UserStatusEnabled
+	// 白标归属：OAuth 回调必须落在发起时的同一个域名上，否则用户会被归到错误的代理名下。
+	// 这里取的是回调请求自身的 Host，与邮箱注册口径一致。
+	user.ParentAgentId = common.GetContextKeyInt(c, constant.ContextKeyAgentId)
 
 	// Handle affiliate code
 	inviterId := 0

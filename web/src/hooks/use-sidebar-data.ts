@@ -26,6 +26,7 @@ import {
   LayoutDashboard,
   ListTodo,
   MessageSquare,
+  Network,
   Radio,
   ServerCog,
   Settings,
@@ -37,6 +38,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { type SidebarData } from '@/components/layout/types'
+import { useIsAgent } from '@/features/agent/use-is-agent'
 import { ROLE } from '@/lib/roles'
 
 /**
@@ -47,6 +49,8 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  // 只有代理才看得到代理后台入口；非代理点进去只会是一个"你不是代理"的空页面。
+  const isAgent = useIsAgent()
 
   return {
     navGroups: [
@@ -108,6 +112,15 @@ export function useSidebarData(): SidebarData {
             url: '/wallet',
             icon: Wallet,
           },
+          ...(isAgent
+            ? [
+                {
+                  title: t('Agent Console'),
+                  url: '/agent' as const,
+                  icon: Network,
+                },
+              ]
+            : []),
           {
             title: t('Profile'),
             url: '/profile',

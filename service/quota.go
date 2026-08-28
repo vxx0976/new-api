@@ -120,6 +120,11 @@ func PreWssConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, usag
 	if ok {
 		actualGroupRatio = userGroupRatio
 	}
+	// 代理定价优先于全局分组倍率。取的是本次请求的链路快照，
+	// 与预扣费用的是同一份，避免中途改价导致差额退款算错。
+	if chain := EnsureAgentPricing(relayInfo); chain.Applies {
+		actualGroupRatio = chain.PaidRate
+	}
 
 	quotaInfo := QuotaInfo{
 		InputDetails: TokenDetails{

@@ -81,12 +81,15 @@ type TokenCountMeta struct {
 }
 
 type RelayInfo struct {
-	TokenId           int
-	TokenKey          string
-	TokenGroup        string
-	UserId            int
-	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
-	UserGroup         string // 用户所在分组
+	TokenId    int
+	TokenKey   string
+	TokenGroup string
+	UserId     int
+	UsingGroup string // 使用的分组，当auto跨分组重试时，会变动
+	UserGroup  string // 用户所在分组
+	// AgentPricing 代理定价链路快照，本次请求解析一次后复用。
+	// 预扣费与结算必须取同一份，否则中间代理改价会让差额退款算错。
+	AgentPricing      *hosttypes.AgentPricingChain
 	TokenUnlimited    bool
 	StartTime         time.Time
 	FirstResponseTime time.Time

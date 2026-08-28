@@ -47,6 +47,11 @@ func GetPricing(c *gin.Context) {
 		if err == nil {
 			group = user.Group
 			for g := range groupRatio {
+				// 代理体系下终端用户该看到的是其归属代理的售价，不是主站价。
+				if agentRatio, ok := service.AgentGroupRatio(userId.(int), g); ok {
+					groupRatio[g] = agentRatio
+					continue
+				}
 				ratio, ok := ratio_setting.GetGroupGroupRatio(group, g)
 				if ok {
 					groupRatio[g] = ratio

@@ -23,8 +23,12 @@ func TestLockForUpdateEmitsRowLock(t *testing.T) {
 		return lockForUpdate(dummyDB).Where("id = ?", 1).Find(&rows).Statement.SQL.String()
 	}
 
+	// 数据库类型是全局量，这里改了必须还原成原值而不是写死 SQLite：
+	// 整包跑在真实 PostgreSQL 上时（TEST_PG_DSN），写死会把后续用例的方言判断带偏，
+	// 导致它们对 PG 发出反引号引用的 SQL 而语法报错。
+	previousMainDatabaseType, previousLogDatabaseType := common.MainDatabaseType(), common.LogDatabaseType()
 	t.Cleanup(func() {
-		common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)
+		common.SetDatabaseTypes(previousMainDatabaseType, previousLogDatabaseType)
 	})
 
 	common.SetDatabaseTypes(common.DatabaseTypeMySQL, common.DatabaseTypeSQLite)

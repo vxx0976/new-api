@@ -11,28 +11,56 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func TestMain(m *testing.M) {
+// openTestDB 默认用内存 SQLite；设了 TEST_PG_DSN 就跑真实 PostgreSQL。
+//
+// 这个开关不是为了凑数据库覆盖率：lockForUpdate 在 SQLite 上是空操作，只有在
+// MySQL/PostgreSQL 上才真正发出 FOR UPDATE；clause.OnConflict 的 DoUpdates 在两边
+// 生成的 SQL 也不同。这些正是资金路径依赖的东西，只在 SQLite 上跑等于没验。
+func openTestDB() *gorm.DB {
+	if dsn := os.Getenv("TEST_PG_DSN"); dsn != "" {
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			panic("failed to open postgres test db: " + err.Error())
+		}
+		common.SetDatabaseTypes(common.DatabaseTypePostgreSQL, common.DatabaseTypePostgreSQL)
+		return db
+	}
+	if dsn := os.Getenv("TEST_MYSQL_DSN"); dsn != "" {
+		db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		if err != nil {
+			panic("failed to open mysql test db: " + err.Error())
+		}
+		common.SetDatabaseTypes(common.DatabaseTypeMySQL, common.DatabaseTypeMySQL)
+		return db
+	}
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		panic("failed to open test db: " + err.Error())
 	}
-	DB = db
-	LOG_DB = db
-
 	common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)
-	common.RedisEnabled = false
-	common.BatchUpdateEnabled = false
-	common.LogConsumeEnabled = true
-	initCol()
-
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic("failed to get sql.DB: " + err.Error())
 	}
+	// 内存库靠单连接共享，多连接会各看各的空库。
 	sqlDB.SetMaxOpenConns(1)
+	return db
+}
+
+func TestMain(m *testing.M) {
+	db := openTestDB()
+	DB = db
+	LOG_DB = db
+
+	common.RedisEnabled = false
+	common.BatchUpdateEnabled = false
+	common.LogConsumeEnabled = true
+	initCol()
 
 	if err := db.AutoMigrate(
 		&Task{},
@@ -57,6 +85,14 @@ func TestMain(m *testing.M) {
 		&SystemInstance{},
 		&SystemTask{},
 		&SystemTaskLock{},
+		&Agent{},
+		&AgentDomain{},
+		&AgentGroupCost{},
+		&AgentGroupSell{},
+		&AgentEarningsOutbox{},
+		&AgentLedger{},
+		&AgentWithdrawRequest{},
+		&AgentAuditLog{},
 	); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}
