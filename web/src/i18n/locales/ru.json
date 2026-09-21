@@ -2616,7 +2616,7 @@
     "footer.columns.related.links.oneApi": "Один API",
     "footer.columns.related.title": "Связанные проекты",
     "footer.defaultCopyright": "Все права защищены.",
-    "footer.new\u0061pi.projectAttributionSuffix": "Все права защищены. Разработано участниками проекта.",
+    "footer.newapi.projectAttributionSuffix": "Все права защищены. Разработано участниками проекта.",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "Для расширенных пользовательских каналов это действует только для маршрутов /v1/responses без преобразования протокола.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Для каналов, добавленных после 10 мая 2025 г., не нужно удалять \".\" из имён моделей при развёртывании",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Для частных развертываний, формат: https://fastgpt.run/api/openapi",
@@ -6828,6 +6828,10 @@
     "ICP filing number": "ICP filing number",
     "e.g. 京ICP备00000000号": "e.g. 京ICP备00000000号",
     "Required on public pages for sites hosted in mainland China. Links to beian.miit.gov.cn.": "Required on public pages for sites hosted in mainland China. Links to beian.miit.gov.cn.",
-    "Dismiss": "Dismiss"
+    "Dismiss": "Dismiss",
+    "Your supplier application is under review": "Your supplier application is under review",
+    "Your supplier application was not approved": "Your supplier application was not approved",
+    "You can use the platform as a regular user in the meantime. Once approved, \"My Channels\" appears in the sidebar and you can list channels.": "You can use the platform as a regular user in the meantime. Once approved, \"My Channels\" appears in the sidebar and you can list channels.",
+    "Contact the platform administrator if you would like your application reconsidered.": "Contact the platform administrator if you would like your application reconsidered."
   }
 }

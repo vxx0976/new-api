@@ -2616,7 +2616,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "相關項目",
     "footer.defaultCopyright": "版權所有。",
-    "footer.new\u0061pi.projectAttributionSuffix": "版權所有，由項目貢獻者設計與開發。",
+    "footer.newapi.projectAttributionSuffix": "版權所有，由項目貢獻者設計與開發。",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "進階自訂渠道僅對 /v1/responses 且不做協定轉換的路由生效。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "對於 2025 年 5 月 10 日之後新增的渠道，在部署時無需從模型名稱中移除 \".\"",
     "For private deployments, format: https://fastgpt.run/api/openapi": "對於私有部署，格式為：https://fastgpt.run/api/openapi",
@@ -6828,6 +6828,10 @@
     "ICP filing number": "ICP 備案號",
     "e.g. 京ICP备00000000号": "例：京ICP備00000000號",
     "Required on public pages for sites hosted in mainland China. Links to beian.miit.gov.cn.": "中國大陸境內部署的站點須在公開頁面展示，點擊跳轉工業和信息化部備案管理系統。",
-    "Dismiss": "關閉"
+    "Dismiss": "關閉",
+    "Your supplier application is under review": "您的供應商申請正在審核中",
+    "Your supplier application was not approved": "您的供應商申請未通過",
+    "You can use the platform as a regular user in the meantime. Once approved, \"My Channels\" appears in the sidebar and you can list channels.": "審核期間您可以作為普通使用者正常使用平台。審核通過後，左側選單會出現「我的渠道」，即可上架渠道。",
+    "Contact the platform administrator if you would like your application reconsidered.": "如需重新審核，請聯絡平台管理員。"
   }
 }

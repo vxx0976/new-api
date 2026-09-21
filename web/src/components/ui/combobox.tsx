@@ -138,7 +138,18 @@ function OptionCombobox(props: LegacyComboboxProps) {
           id={props.id}
           disabled={props.disabled}
           onBlur={props.onBlur}
-          onKeyDown={props.onKeyDown}
+          onKeyDown={(event) => {
+            // An open popup owns Escape. Without this the key also reaches the
+            // surrounding dialog or drawer, which closes and discards
+            // everything the user had filled in.
+            if (event.key === 'Escape' && open) {
+              event.stopPropagation()
+              event.nativeEvent.stopImmediatePropagation()
+              setOpen(false)
+              setSearch('')
+            }
+            props.onKeyDown?.(event)
+          }}
           onFocus={() => {
             // Dialog autofocus should not expand a select-style combobox.
             if (props.openOnFocus) setOpen(true)
