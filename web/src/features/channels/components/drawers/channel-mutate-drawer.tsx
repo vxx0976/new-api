@@ -860,7 +860,12 @@ export function ChannelMutateDrawer({
         )
         form.setValue('type', CHANNEL_TYPE_TASK_PLUGIN, { shouldDirty: true })
         form.setValue('task_plugin_key', plugin.key, { shouldDirty: true })
-        if (!isEditing && !providerTarget && !form.getValues('name').trim()) {
+        if (
+          !isSupplier &&
+          !isEditing &&
+          !providerTarget &&
+          !form.getValues('name').trim()
+        ) {
           form.setValue('name', plugin.name)
         }
         if (plugin.models.length) {
@@ -888,7 +893,12 @@ export function ChannelMutateDrawer({
           return
         }
         form.setValue('type', target.type, { shouldDirty: true })
-        if (!isEditing && !providerTarget && !form.getValues('name').trim()) {
+        if (
+          !isSupplier &&
+          !isEditing &&
+          !providerTarget &&
+          !form.getValues('name').trim()
+        ) {
           const label = CHANNEL_TYPE_OPTIONS.find(
             (option) => option.value === target.type
           )?.label
@@ -903,6 +913,7 @@ export function ChannelMutateDrawer({
       canEditSensitive,
       providerTarget,
       isEditing,
+      isSupplier,
       form,
       t,
       taskPluginOptionsQuery.data,
