@@ -61,6 +61,12 @@ type ChannelProviderPickerProps = {
   plugins: TaskPluginOption[]
   currentProvider?: ChannelProviderTarget | null
   canBindPlugin: boolean
+  /**
+   * Restricts the built-in providers offered, for callers that may only use a
+   * subset (suppliers, who list channels under platform-defined names). Undefined
+   * means every built-in provider stays available.
+   */
+  allowedBuiltinTypes?: Set<number>
   loading: boolean
   failed: boolean
   disabled: boolean
@@ -137,6 +143,12 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
         if (props.isCreating && option.value === 16) continue
         if (props.isCreating && option.value === 7) continue
         if (replacedTypes.has(option.value)) continue
+        if (
+          props.allowedBuiltinTypes &&
+          !props.allowedBuiltinTypes.has(option.value)
+        ) {
+          continue
+        }
         const isCustom =
           option.value === 8 || option.value === CHANNEL_TYPE_ADVANCED_CUSTOM
         const isGateway =
@@ -185,6 +197,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
     i18n.language,
     keyword,
     props.isCreating,
+    props.allowedBuiltinTypes,
     props.canBindPlugin,
     props.currentProvider,
     props.loading,
@@ -195,6 +208,8 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
 
   const customType = Number(search.trim())
   const canUseCustomType =
+    // A restricted caller must not reach an arbitrary type by typing its number.
+    !props.allowedBuiltinTypes &&
     (filter === 'all' || filter === 'custom') &&
     /^\d+$/.test(search.trim()) &&
     Number.isSafeInteger(customType) &&

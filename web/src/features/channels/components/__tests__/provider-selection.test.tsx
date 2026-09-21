@@ -102,6 +102,37 @@ test('creation hides legacy Zhipu from categories and numeric search while GLM r
   expect(screen.queryByRole('option')).not.toBeInTheDocument()
 })
 
+test('a restricted caller only sees its allowed providers and cannot type a type number', async () => {
+  const user = userEvent.setup()
+  const select = vi.fn()
+  render(
+    <ChannelProviderPicker
+      isCreating
+      allowedBuiltinTypes={new Set([1])}
+      plugins={[]}
+      canBindPlugin={false}
+      loading={false}
+      failed={false}
+      disabled={false}
+      onRetry={vi.fn()}
+      onSelect={select}
+    />
+  )
+  const options = screen.getAllByRole('option')
+  expect(options).toHaveLength(1)
+  expect(options[0]).toHaveAccessibleName(/OpenAI/)
+
+  // A disallowed provider stays unreachable through search...
+  const search = screen.getByRole('combobox')
+  await user.type(search, 'zhi')
+  expect(screen.queryByRole('option')).not.toBeInTheDocument()
+
+  // ...and the numeric custom-type escape hatch is closed.
+  await user.clear(search)
+  await user.type(search, '26')
+  expect(screen.queryByRole('option')).not.toBeInTheDocument()
+})
+
 test('editing an existing legacy Zhipu channel retains its selectable provider', async () => {
   const user = userEvent.setup()
   const select = vi.fn()

@@ -766,6 +766,16 @@ export function ChannelMutateDrawer({
     staleTime: 5 * 60 * 1000,
   })
   const channelNamesByType = nameOptionsData?.data
+  // Suppliers may only list channel types the platform configured names for.
+  const supplierAllowedTypes = useMemo(() => {
+    if (!isSupplier) return undefined
+    const allowed = new Set<number>()
+    for (const [type, names] of Object.entries(channelNamesByType ?? {})) {
+      if (names.length > 0) allowed.add(Number(type))
+    }
+    return allowed
+  }, [channelNamesByType, isSupplier])
+
   const channelNameOptions = useMemo(
     () =>
       (channelNamesByType?.[String(currentType)] ?? []).map((name) => ({
@@ -4895,10 +4905,13 @@ export function ChannelMutateDrawer({
 
           {showProviderPicker && (
             <ChannelProviderPicker
+              allowedBuiltinTypes={supplierAllowedTypes}
               isCreating={!isEditing}
               plugins={taskPluginOptionsQuery.data ?? []}
               currentProvider={providerTarget}
-              canBindPlugin={canBindTaskPlugin}
+              // Task-plugin channels have no platform-defined names, so they are
+              // not something a supplier can list.
+              canBindPlugin={canBindTaskPlugin && !isSupplier}
               loading={taskPluginOptionsQuery.isLoading}
               failed={taskPluginOptionsQuery.isError}
               disabled={isSubmitting || !canEditSensitive}
