@@ -19,8 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import { getGroups as getUserGroups } from '@/features/users/api'
 import { api, type ApiRequestConfig } from '@/lib/api'
 import { ROLE } from '@/lib/roles'
+import { requireServerSuccess } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
+import type { InferenceStatus } from './lib/inference-status'
 import type {
   AddChannelRequest,
   BatchDeleteParams,
@@ -61,6 +63,40 @@ const channelActionConfig = (
   skipBusinessError: true,
   skipErrorHandler: true,
 })
+
+export async function getInferenceStatus(
+  channelId: number,
+  provider: 'vllm' | 'sglang',
+  signal?: AbortSignal
+): Promise<InferenceStatus> {
+  const response = await api.get<{ success: boolean; data: InferenceStatus }>(
+    `/api/channel/${channelId}/${provider}/status`,
+    { signal, disableDuplicate: true }
+  )
+  return requireServerSuccess(response.data).data
+}
+
+export type TaskPluginOption = {
+  sortPriority?: number
+  website?: string
+  key: string
+  name: string
+  description?: Record<string, string> | null
+  icon?: string
+  hasIcon?: boolean
+  baseUrl?: string
+  models: string[]
+  channelTypes?: number[] | null
+  upstreams?: string[] | null
+}
+
+export async function getTaskPluginOptions(): Promise<TaskPluginOption[]> {
+  const response = await api.get<{
+    success: boolean
+    data: TaskPluginOption[]
+  }>('/api/task_plugin_options')
+  return requireServerSuccess(response.data).data
+}
 
 export type CodexUsageResponse = {
   success: boolean
@@ -122,9 +158,24 @@ export async function getChannel(id: number): Promise<GetChannelResponse> {
 /**
  * Get channel operations summary for administrators
  */
-export async function getChannelOps(): Promise<ChannelOpsResponse> {
-  const res = await api.get(`${channelApiBase()}/ops`, channelActionConfig())
+export async function getChannelOps(
+  autoBan?: boolean
+): Promise<ChannelOpsResponse> {
+  const res = await api.get(`${channelApiBase()}/ops`, {
+    ...channelActionConfig(),
+    params: autoBan === undefined ? undefined : { auto_ban: autoBan },
+  })
   return res.data
+}
+
+export async function getChannelDefaultBaseURLs(): Promise<
+  Partial<Record<number, string>>
+> {
+  const response = await api.get<{
+    success: boolean
+    data: Partial<Record<number, string>>
+  }>('/api/channel/default_base_urls')
+  return requireServerSuccess(response.data).data
 }
 
 /**
@@ -134,11 +185,7 @@ export async function getChannelOps(): Promise<ChannelOpsResponse> {
 export async function createChannel(
   data: AddChannelRequest
 ): Promise<{ success: boolean; message?: string }> {
-  const res = await api.post(
-    `${channelApiBase()}/`,
-    data,
-    channelActionConfig()
-  )
+  const res = await api.post(channelApiBase(), data, channelActionConfig())
   return res.data
 }
 
@@ -316,13 +363,15 @@ export async function deleteDisabledChannels(): Promise<{
  */
 export async function getChannelKey(
   id: number,
-  proofToken?: string
+  proofToken: string,
+  signal?: AbortSignal
 ): Promise<{ success: boolean; message?: string; data?: { key: string } }> {
   const res = await api.post(
     `/api/channel/${id}/key`,
     undefined,
     channelActionConfig({
-      headers: proofToken ? { 'X-Security-Proof': proofToken } : undefined,
+      headers: { 'X-Security-Proof': proofToken },
+      signal,
     })
   )
   return res.data
