@@ -33,6 +33,7 @@ import {
 import { formatQuota, formatTimestamp } from '@/lib/format'
 
 import {
+  SUPPLIER_STATUS,
   USER_STATUS,
   USER_STATUSES,
   USER_ROLES,
@@ -202,12 +203,30 @@ export function useUsersColumns(): ColumnDef<User>[] {
           return null
         }
 
+        const user = row.original
+        const isPendingSupplier =
+          user.supplier_status === SUPPLIER_STATUS.PENDING
+
         return (
-          <div className='flex items-center gap-x-2'>
-            {roleConfig.icon && (
-              <roleConfig.icon size={16} className='text-muted-foreground' />
+          <div className='flex flex-col gap-1'>
+            <div className='flex items-center gap-x-2'>
+              {roleConfig.icon && (
+                <roleConfig.icon size={16} className='text-muted-foreground' />
+              )}
+              <span className='text-sm'>{t(roleConfig.labelKey)}</span>
+              {isPendingSupplier && (
+                <StatusBadge
+                  label={t('Supplier pending')}
+                  variant='warning'
+                  copyable={false}
+                />
+              )}
+            </div>
+            {user.company_name && (
+              <span className='text-muted-foreground truncate text-xs'>
+                {user.company_name}
+              </span>
             )}
-            <span className='text-sm'>{t(roleConfig.labelKey)}</span>
           </div>
         )
       },

@@ -50,6 +50,8 @@ type Channel struct {
 	ParamOverride     *string `json:"param_override" gorm:"type:text"`
 	HeaderOverride    *string `json:"header_override" gorm:"type:text"`
 	Remark            *string `json:"remark" gorm:"type:varchar(255)" validate:"max=255"`
+	// OwnerId is the supplier user that owns this channel; 0 means platform-owned.
+	OwnerId int `json:"owner_id" gorm:"index;default:0"`
 	// add after v0.8.5
 	ChannelInfo ChannelInfo `json:"channel_info" gorm:"type:json"`
 
@@ -811,6 +813,24 @@ func DisableChannelByTag(tag string) error {
 	}
 	err = UpdateAbilityStatusByTag(tag, false)
 	return err
+}
+
+// DisableChannelsByOwner takes every enabled channel of a supplier offline, used
+// when the supplier loses its supplier role or account.
+func DisableChannelsByOwner(ownerId int) error {
+	if ownerId <= 0 {
+		return nil
+	}
+	var ids []int
+	err := DB.Model(&Channel{}).Where("owner_id = ? AND status = ?", ownerId, common.ChannelStatusEnabled).Pluck("id", &ids).Error
+	if err != nil || len(ids) == 0 {
+		return err
+	}
+	err = DB.Model(&Channel{}).Where("id IN ?", ids).Update("status", common.ChannelStatusManuallyDisabled).Error
+	if err != nil {
+		return err
+	}
+	return DB.Model(&Ability{}).Where("channel_id IN ?", ids).Select("enabled").Update("enabled", false).Error
 }
 
 func EditChannelByTag(tag string, newTag *string, modelMapping *string, models *string, group *string, priority *int64, weight *uint, paramOverride *string, headerOverride *string) error {

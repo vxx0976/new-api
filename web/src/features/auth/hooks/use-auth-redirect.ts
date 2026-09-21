@@ -24,6 +24,7 @@ import {
   sanitizeAuthRedirect,
 } from '@/features/auth/lib/auth-redirect'
 import { applyAuthBundle } from '@/lib/api'
+import { ROLE } from '@/lib/roles'
 import type { AuthBundle } from '@/stores/auth-store'
 
 /**
@@ -47,8 +48,11 @@ export function useAuthRedirect() {
       await i18n.changeLanguage(savedLang)
     }
 
+    // Suppliers work from their channel inventory rather than the dashboard.
+    const defaultPath =
+      bundle.user.role === ROLE.SUPPLIER ? '/channels' : '/dashboard'
     const targetPath =
-      sanitizeAuthRedirect(redirectTo, window.location.origin) ?? '/dashboard'
+      sanitizeAuthRedirect(redirectTo, window.location.origin) ?? defaultPath
     navigate({ href: targetPath, replace: true })
   }
 

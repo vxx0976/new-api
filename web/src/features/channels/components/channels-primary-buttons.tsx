@@ -56,6 +56,8 @@ import {
   ADMIN_PERMISSION_RESOURCES,
   hasPermission,
 } from '@/lib/admin-permissions'
+import { ROLE } from '@/lib/roles'
+import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import {
@@ -84,6 +86,8 @@ export function ChannelsPrimaryButtons() {
   const [showConsistencyDialog, setShowConsistencyDialog] = useState(false)
   const [isRepairingConsistency, setIsRepairingConsistency] = useState(false)
   const currentUser = useAuthStore((s) => s.auth.user)
+  // Batch, tag and fleet-wide maintenance actions are platform-side tools.
+  const isSupplier = currentUser?.role === ROLE.SUPPLIER
   const canEditSensitive = hasPermission(
     currentUser,
     ADMIN_PERMISSION_RESOURCES.CHANNEL,
@@ -108,7 +112,12 @@ export function ChannelsPrimaryButtons() {
     <>
       <div className='flex items-center gap-2'>
         {/* Desktop: Toggle switches visible */}
-        <div className='hidden items-center gap-2 rounded-md border px-3 py-1.5 sm:flex'>
+        <div
+          className={cn(
+            'hidden items-center gap-2 rounded-md border px-3 py-1.5',
+            !isSupplier && 'sm:flex'
+          )}
+        >
           <ListChecks className='text-muted-foreground h-4 w-4' />
           <Label
             htmlFor='channel-batch-mode'
@@ -123,7 +132,12 @@ export function ChannelsPrimaryButtons() {
           />
         </div>
 
-        <div className='hidden items-center gap-2 rounded-md border px-3 py-1.5 sm:flex'>
+        <div
+          className={cn(
+            'hidden items-center gap-2 rounded-md border px-3 py-1.5',
+            !isSupplier && 'sm:flex'
+          )}
+        >
           <Tags className='text-muted-foreground h-4 w-4' />
           <Label htmlFor='tag-mode' className='cursor-pointer text-sm'>
             {t('Tag Mode')}
@@ -172,117 +186,121 @@ export function ChannelsPrimaryButtons() {
         </Tooltip>
 
         {/* More Actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant='outline' size='sm' />}>
-            <MoreHorizontal className='h-4 w-4' />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end' className='w-56'>
-            {/* Mobile-only: toggle switches */}
-            <DropdownMenuCheckboxItem
-              className='sm:hidden'
-              checked={batchMode}
-              onCheckedChange={handleBatchModeToggle}
+        {!isSupplier && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button variant='outline' size='sm' />}
             >
-              <ListChecks className='mr-2 h-4 w-4' />
-              {t('Batch Operations')}
-            </DropdownMenuCheckboxItem>
+              <MoreHorizontal className='h-4 w-4' />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-56'>
+              {/* Mobile-only: toggle switches */}
+              <DropdownMenuCheckboxItem
+                className='sm:hidden'
+                checked={batchMode}
+                onCheckedChange={handleBatchModeToggle}
+              >
+                <ListChecks className='mr-2 h-4 w-4' />
+                {t('Batch Operations')}
+              </DropdownMenuCheckboxItem>
 
-            <DropdownMenuCheckboxItem
-              className='sm:hidden'
-              checked={enableTagMode}
-              onCheckedChange={handleTagModeToggle}
-            >
-              <Tags className='mr-2 h-4 w-4' />
-              {t('Tag Mode')}
-            </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                className='sm:hidden'
+                checked={enableTagMode}
+                onCheckedChange={handleTagModeToggle}
+              >
+                <Tags className='mr-2 h-4 w-4' />
+                {t('Tag Mode')}
+              </DropdownMenuCheckboxItem>
 
-            <DropdownMenuCheckboxItem
-              className='sm:hidden'
-              checked={idSort}
-              onCheckedChange={handleIdSortToggle}
-            >
-              <SortAsc className='mr-2 h-4 w-4' />
-              {t('Sort by ID')}
-            </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                className='sm:hidden'
+                checked={idSort}
+                onCheckedChange={handleIdSortToggle}
+              >
+                <SortAsc className='mr-2 h-4 w-4' />
+                {t('Sort by ID')}
+              </DropdownMenuCheckboxItem>
 
-            <DropdownMenuSeparator className='sm:hidden' />
+              <DropdownMenuSeparator className='sm:hidden' />
 
-            <DropdownMenuItem
-              onClick={() => {
-                handleTestAllChannels(queryClient)
-              }}
-            >
-              {t('Test All Channels')}
-              <DropdownMenuShortcut>
-                <TestTube className='h-4 w-4' />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  handleTestAllChannels(queryClient)
+                }}
+              >
+                {t('Test All Channels')}
+                <DropdownMenuShortcut>
+                  <TestTube className='h-4 w-4' />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => {
-                handleUpdateAllBalances(queryClient)
-              }}
-            >
-              {t('Update All Balances')}
-              <DropdownMenuShortcut>
-                <DollarSign className='h-4 w-4' />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  handleUpdateAllBalances(queryClient)
+                }}
+              >
+                {t('Update All Balances')}
+                <DropdownMenuShortcut>
+                  <DollarSign className='h-4 w-4' />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-              onClick={() => upstream.detectAllUpdates()}
-              disabled={upstream.detectAllLoading}
-            >
-              {t('Detect All Upstream Updates')}
-              <DropdownMenuShortcut>
-                <RefreshCw className='h-4 w-4' />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => upstream.detectAllUpdates()}
+                disabled={upstream.detectAllLoading}
+              >
+                {t('Detect All Upstream Updates')}
+                <DropdownMenuShortcut>
+                  <RefreshCw className='h-4 w-4' />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => upstream.applyAllUpdates()}
-              disabled={upstream.applyAllLoading}
-            >
-              {t('Apply All Upstream Updates')}
-              <DropdownMenuShortcut>
-                <ArrowUpFromLine className='h-4 w-4' />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => upstream.applyAllUpdates()}
+                disabled={upstream.applyAllLoading}
+              >
+                {t('Apply All Upstream Updates')}
+                <DropdownMenuShortcut>
+                  <ArrowUpFromLine className='h-4 w-4' />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                setShowConsistencyDialog(true)
-              }}
-            >
-              {t('Repair Channel Consistency')}
-              <DropdownMenuShortcut>
-                <Settings2 className='h-4 w-4' />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  setShowConsistencyDialog(true)
+                }}
+              >
+                {t('Repair Channel Consistency')}
+                <DropdownMenuShortcut>
+                  <Settings2 className='h-4 w-4' />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                if (!canEditSensitive) return
-                setShowDeleteDialog(true)
-              }}
-              disabled={!canEditSensitive}
-              className='text-destructive focus:text-destructive'
-            >
-              {t('Delete All Disabled')}
-              <DropdownMenuShortcut>
-                <Trash2 className='h-4 w-4' />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  if (!canEditSensitive) return
+                  setShowDeleteDialog(true)
+                }}
+                disabled={!canEditSensitive}
+                className='text-destructive focus:text-destructive'
+              >
+                {t('Delete All Disabled')}
+                <DropdownMenuShortcut>
+                  <Trash2 className='h-4 w-4' />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <ConfirmDialog

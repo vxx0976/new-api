@@ -36,8 +36,35 @@ func registerChannelRoutes(apiRouter *gin.RouterGroup) {
 	}
 }
 
+// registerSupplierChannelRoutes exposes the subset of channel management a
+// supplier may use. SupplierChannelScope restricts every handler here to the
+// channels owned by the caller, so only handlers that honor
+// ContextKeyChannelOwnerScope (or act on the :id checked by the middleware) may
+// be listed.
+func registerSupplierChannelRoutes(apiRouter *gin.RouterGroup) {
+	supplierChannelRoute := apiRouter.Group("/supplier/channel")
+	supplierChannelRoute.Use(middleware.SupplierAuth(), middleware.SupplierChannelScope())
+
+	supplierChannelRoute.GET("/", controller.GetAllChannels)
+	supplierChannelRoute.GET("/search", controller.SearchChannels)
+	supplierChannelRoute.GET("/name_options", controller.GetChannelNameOptions)
+	supplierChannelRoute.GET("/models", controller.ChannelListModels)
+	supplierChannelRoute.GET("/models_enabled", controller.EnabledListModels)
+	supplierChannelRoute.GET("/ops", controller.GetChannelOps)
+	supplierChannelRoute.GET("/groups", controller.GetGroups)
+	supplierChannelRoute.GET("/:id", controller.GetChannel)
+	supplierChannelRoute.GET("/test/:id", controller.TestChannel)
+	supplierChannelRoute.POST("/", controller.AddChannel)
+	supplierChannelRoute.PUT("/", controller.UpdateChannel)
+	supplierChannelRoute.POST("/:id/status", controller.UpdateChannelStatus)
+	supplierChannelRoute.DELETE("/:id", controller.DeleteChannel)
+	supplierChannelRoute.GET("/fetch_models/:id", controller.FetchUpstreamModels)
+	supplierChannelRoute.POST("/fetch_models", controller.FetchModels)
+}
+
 var channelPermissionRoutes = []permissionRoute{
 	{method: http.MethodGet, path: "/", permission: authz.ChannelRead, handler: controller.GetAllChannels},
+	{method: http.MethodGet, path: "/name_options", permission: authz.ChannelRead, handler: controller.GetChannelNameOptions},
 	{method: http.MethodGet, path: "/search", permission: authz.ChannelRead, handler: controller.SearchChannels},
 	{method: http.MethodGet, path: "/models", permission: authz.ChannelRead, handler: controller.ChannelListModels},
 	{method: http.MethodGet, path: "/models_enabled", permission: authz.ChannelRead, handler: controller.EnabledListModels},

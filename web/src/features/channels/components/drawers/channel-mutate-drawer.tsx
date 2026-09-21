@@ -130,6 +130,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import {
   fetchModels,
   getAllModels,
+  getChannelNameOptions,
   getChannel,
   getChannelKey,
   getGroups,
@@ -621,6 +622,7 @@ export function ChannelMutateDrawer({
     ADMIN_PERMISSION_ACTIONS.SENSITIVE_WRITE
   )
   const canRevealChannelKey = currentUser?.role === ROLE.SUPER_ADMIN
+  const isSupplier = currentUser?.role === ROLE.SUPPLIER
   const [fetchModelsDialogOpen, setFetchModelsDialogOpen] = useState(false)
   const [channelKey, setChannelKey] = useState<string | null>(null)
   const [isChannelKeyLoading, setIsChannelKeyLoading] = useState(false)
@@ -671,6 +673,13 @@ export function ChannelMutateDrawer({
   const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
     queryKey: ['groups'],
     queryFn: getGroups,
+  })
+
+  // Platform-configured channel names, keyed by channel type
+  const { data: nameOptionsData } = useQuery({
+    queryKey: ['channel_name_options'],
+    queryFn: getChannelNameOptions,
+    staleTime: 5 * 60 * 1000,
   })
 
   // Fetch all available models
@@ -930,21 +939,51 @@ export function ChannelMutateDrawer({
     [currentType]
   )
 
+  const channelNamesByType = nameOptionsData?.data
+  const channelNameOptions = useMemo(
+    () =>
+      (channelNamesByType?.[String(currentType)] ?? []).map((name) => ({
+        value: name,
+        label: name,
+      })),
+    [channelNamesByType, currentType]
+  )
+
+  // A supplier's name must belong to the selected type, so switching type
+  // drops a name the new type does not offer.
+  useEffect(() => {
+    if (!isSupplier || !channelNamesByType || !currentName) return
+    const names = channelNamesByType[String(currentType)] ?? []
+    if (!names.includes(currentName)) {
+      form.setValue('name', '', { shouldDirty: true })
+    }
+  }, [channelNamesByType, currentName, currentType, form, isSupplier])
+
   const channelTypeOptions = useMemo(() => {
-    const options = CHANNEL_TYPE_OPTIONS.map((option) => ({
+    // Suppliers may only list channel types the platform configured names for.
+    const selectableTypes = isSupplier
+      ? CHANNEL_TYPE_OPTIONS.filter(
+          (option) =>
+            (channelNamesByType?.[String(option.value)]?.length ?? 0) > 0
+        )
+      : CHANNEL_TYPE_OPTIONS
+    const options = selectableTypes.map((option) => ({
       value: String(option.value),
       label: t(option.label),
       icon: <ChannelTypeLogo type={option.value} size={16} />,
     }))
     if (!options.some((option) => Number(option.value) === currentType)) {
+      const knownType = CHANNEL_TYPE_OPTIONS.find(
+        (option) => option.value === currentType
+      )
       options.push({
         value: String(currentType),
-        label: `#${currentType}`,
+        label: knownType ? t(knownType.label) : `#${currentType}`,
         icon: <ChannelTypeLogo type={currentType} size={16} />,
       })
     }
     return options
-  }, [currentType, t])
+  }, [channelNamesByType, currentType, isSupplier, t])
 
   const formErrors = form.formState.errors
   const identityHasErrors = Boolean(
@@ -2011,7 +2050,7 @@ export function ChannelMutateDrawer({
                                         )}
                                         emptyText={t('No channel type found.')}
                                         className='pl-10'
-                                        allowCustomValue
+                                        allowCustomValue={!isSupplier}
                                         openOnFocus={false}
                                       />
                                     </div>
@@ -2036,11 +2075,37 @@ export function ChannelMutateDrawer({
                               <FormItem>
                                 <FormLabel>{t('Name *')}</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    placeholder={t(FIELD_PLACEHOLDERS.NAME)}
-                                    {...field}
-                                  />
+                                  {isSupplier ||
+                                  channelNameOptions.length > 0 ? (
+                                    <Combobox
+                                      options={channelNameOptions}
+                                      value={field.value}
+                                      onValueChange={(value) =>
+                                        field.onChange(value ?? '')
+                                      }
+                                      placeholder={t('Select channel name')}
+                                      searchPlaceholder={t(
+                                        'Search channel name...'
+                                      )}
+                                      emptyText={t(
+                                        'No channel names are configured for this type.'
+                                      )}
+                                      allowCustomValue={!isSupplier}
+                                    />
+                                  ) : (
+                                    <Input
+                                      placeholder={t(FIELD_PLACEHOLDERS.NAME)}
+                                      {...field}
+                                    />
+                                  )}
                                 </FormControl>
+                                {isSupplier && (
+                                  <FormDescription>
+                                    {t(
+                                      'Channel names are defined by the platform for each channel type.'
+                                    )}
+                                  </FormDescription>
+                                )}
                                 <FormMessage />
                               </FormItem>
                             )}

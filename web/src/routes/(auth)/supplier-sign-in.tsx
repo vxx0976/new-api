@@ -17,32 +17,30 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
+import { z } from 'zod'
 
-import { Channels } from '@/features/channels'
+import { sanitizeAuthRedirect } from '@/features/auth/lib/auth-redirect'
+import { SupplierSignIn } from '@/features/auth/supplier/supplier-sign-in'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
-const channelsSearchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(undefined),
-  filter: z.string().optional().catch(''),
-  status: z.array(z.string()).optional().catch([]),
-  type: z.array(z.string()).optional().catch([]),
-  group: z.array(z.string()).optional().catch([]),
-  model: z.string().optional().catch(''),
+const searchSchema = z.object({
+  redirect: z.string().optional(),
 })
 
-export const Route = createFileRoute('/_authenticated/channels/')({
-  beforeLoad: () => {
+export const Route = createFileRoute('/(auth)/supplier-sign-in')({
+  component: SupplierSignIn,
+  validateSearch: searchSchema,
+  beforeLoad: async ({ search }) => {
     const { auth } = useAuthStore.getState()
 
-    if (!auth.user || auth.user.role < ROLE.SUPPLIER) {
-      throw redirect({
-        to: '/403',
-      })
+    if (auth.user) {
+      const defaultPath =
+        auth.user.role === ROLE.SUPPLIER ? '/channels' : '/dashboard'
+      const target =
+        sanitizeAuthRedirect(search?.redirect, window.location.origin) ??
+        defaultPath
+      throw redirect({ href: target, replace: true })
     }
   },
-  validateSearch: channelsSearchSchema,
-  component: Channels,
 })

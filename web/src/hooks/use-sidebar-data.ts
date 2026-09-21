@@ -116,6 +116,17 @@ export function useSidebarData(): SidebarData {
         ],
       },
       {
+        id: 'supplier',
+        title: t('Supplier'),
+        items: [
+          {
+            title: t('My Channels'),
+            url: '/channels',
+            icon: Radio,
+          },
+        ],
+      },
+      {
         id: 'admin',
         title: t('Admin'),
         items: [

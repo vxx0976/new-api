@@ -40,6 +40,8 @@ export interface RegisterPayload {
   verification_code?: string
   aff_code?: string
   turnstile?: string
+  /** Present only for supplier applications */
+  company_name?: string
 }
 
 export interface PasswordResetPayload {

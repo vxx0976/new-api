@@ -178,12 +178,22 @@ const (
 const (
 	RoleGuestUser  = 0
 	RoleCommonUser = 1
-	RoleAdminUser  = 10
-	RoleRootUser   = 100
+	// RoleSupplierUser is an approved supplier: may only manage the channels it owns.
+	RoleSupplierUser = 5
+	RoleAdminUser    = 10
+	RoleRootUser     = 100
+)
+
+// Supplier application status stored on the user.
+const (
+	SupplierStatusNone     = 0
+	SupplierStatusPending  = 1
+	SupplierStatusApproved = 2
+	SupplierStatusRejected = 3
 )
 
 func IsValidateRole(role int) bool {
-	return role == RoleGuestUser || role == RoleCommonUser || role == RoleAdminUser || role == RoleRootUser
+	return role == RoleGuestUser || role == RoleCommonUser || role == RoleSupplierUser || role == RoleAdminUser || role == RoleRootUser
 }
 
 var (

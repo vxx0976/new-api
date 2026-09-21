@@ -57,6 +57,7 @@ import {
   ADMIN_PERMISSION_RESOURCES,
   hasPermission,
 } from '@/lib/admin-permissions'
+import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { MODEL_FETCHABLE_TYPES } from '../constants'
@@ -90,6 +91,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
 
   const isEnabled = isChannelEnabled(channel)
   const isMultiKey = isMultiKeyChannel(channel)
+  const isSupplier = currentUser?.role === ROLE.SUPPLIER
   const canEditSensitive = hasPermission(
     currentUser,
     ADMIN_PERMISSION_RESOURCES.CHANNEL,
@@ -282,12 +284,14 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuItem>
 
           {/* Query Balance */}
-          <DropdownMenuItem onClick={handleQueryBalance}>
-            {t('Query Balance')}
-            <DropdownMenuShortcut>
-              <DollarSign size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
+          {!isSupplier && (
+            <DropdownMenuItem onClick={handleQueryBalance}>
+              {t('Query Balance')}
+              <DropdownMenuShortcut>
+                <DollarSign size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
 
           {/* Fetch Models */}
           <DropdownMenuItem onClick={handleFetchModels}>
@@ -298,7 +302,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuItem>
 
           {/* Detect Upstream Updates (only for fetchable channel types) */}
-          {MODEL_FETCHABLE_TYPES.has(channel.type) && (
+          {!isSupplier && MODEL_FETCHABLE_TYPES.has(channel.type) && (
             <DropdownMenuItem
               onClick={() => {
                 const meta = parseUpstreamUpdateMeta(channel.settings)
@@ -325,7 +329,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           )}
 
           {/* Ollama Models (only for Ollama channels) */}
-          {channel.type === 4 && (
+          {!isSupplier && channel.type === 4 && (
             <DropdownMenuItem onClick={handleManageOllamaModels}>
               {t('Manage Ollama Models')}
               <DropdownMenuShortcut>
@@ -337,15 +341,17 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           <DropdownMenuSeparator />
 
           {/* Copy Channel */}
-          <DropdownMenuItem
-            disabled={!canEditSensitive}
-            onClick={canEditSensitive ? handleCopy : undefined}
-          >
-            {t('Copy Channel')}
-            <DropdownMenuShortcut>
-              <Copy size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
+          {!isSupplier && (
+            <DropdownMenuItem
+              disabled={!canEditSensitive}
+              onClick={canEditSensitive ? handleCopy : undefined}
+            >
+              {t('Copy Channel')}
+              <DropdownMenuShortcut>
+                <Copy size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
           {!canEditSensitive && (
             <DropdownMenuItem disabled className='text-xs normal-case'>
               {t('No permission to perform this action')}
@@ -353,7 +359,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           )}
 
           {/* Manage Keys (only for multi-key channels) */}
-          {isMultiKey && (
+          {!isSupplier && isMultiKey && (
             <DropdownMenuItem onClick={handleManageKeys}>
               {t('Manage Keys')}
               <DropdownMenuShortcut>

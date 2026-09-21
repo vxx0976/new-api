@@ -19,6 +19,7 @@ import (
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/service/authz"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -81,14 +82,23 @@ func applyChannelStatusFilter(query *gorm.DB, statusFilter int) *gorm.DB {
 	return query
 }
 
-func buildChannelListQuery(group string, statusFilter int, typeFilter int) *gorm.DB {
+func buildChannelListQuery(c *gin.Context, group string, statusFilter int, typeFilter int) *gorm.DB {
 	query := model.DB.Model(&model.Channel{})
+	if ownerScope := common.GetContextKeyInt(c, constant.ContextKeyChannelOwnerScope); ownerScope != 0 {
+		query = query.Where("owner_id = ?", ownerScope)
+	}
 	query = model.ApplyChannelGroupFilter(query, group)
 	query = applyChannelStatusFilter(query, statusFilter)
 	if typeFilter >= 0 {
 		query = query.Where("type = ?", typeFilter)
 	}
 	return query
+}
+
+// GetChannelNameOptions returns the configured channel type -> selectable
+// channel names map used by the channel form.
+func GetChannelNameOptions(c *gin.Context) {
+	common.ApiSuccess(c, operation_setting.GetSupplierSetting().ChannelNames)
 }
 
 func GetChannelOps(c *gin.Context) {
@@ -119,13 +129,13 @@ func GetAllChannels(c *gin.Context) {
 	var total int64
 
 	if enableTagMode {
-		tags, err := model.GetPaginatedChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+		tags, err := model.GetPaginatedChannelTags(buildChannelListQuery(c, groupFilter, statusFilter, typeFilter), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 		if err != nil {
 			common.SysError("failed to get paginated tags: " + err.Error())
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取标签失败，请稍后重试"})
 			return
 		}
-		total, err = model.CountChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter))
+		total, err = model.CountChannelTags(buildChannelListQuery(c, groupFilter, statusFilter, typeFilter))
 		if err != nil {
 			common.SysError("failed to count tags: " + err.Error())
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取标签数量失败，请稍后重试"})
@@ -136,7 +146,7 @@ func GetAllChannels(c *gin.Context) {
 				continue
 			}
 			var tagChannels []*model.Channel
-			err := sortOptions.Apply(buildChannelListQuery(groupFilter, statusFilter, typeFilter).Where("tag = ?", *tag)).
+			err := sortOptions.Apply(buildChannelListQuery(c, groupFilter, statusFilter, typeFilter).Where("tag = ?", *tag)).
 				Omit("key").
 				Find(&tagChannels).Error
 			if err != nil {
@@ -147,13 +157,13 @@ func GetAllChannels(c *gin.Context) {
 			channelData = append(channelData, tagChannels...)
 		}
 	} else {
-		if err := buildChannelListQuery(groupFilter, statusFilter, typeFilter).Count(&total).Error; err != nil {
+		if err := buildChannelListQuery(c, groupFilter, statusFilter, typeFilter).Count(&total).Error; err != nil {
 			common.SysError("failed to count channels: " + err.Error())
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取渠道数量失败，请稍后重试"})
 			return
 		}
 
-		err := sortOptions.Apply(buildChannelListQuery(groupFilter, statusFilter, typeFilter)).
+		err := sortOptions.Apply(buildChannelListQuery(c, groupFilter, statusFilter, typeFilter)).
 			Limit(pageInfo.GetPageSize()).
 			Offset(pageInfo.GetStartIdx()).
 			Omit("key").
@@ -169,7 +179,7 @@ func GetAllChannels(c *gin.Context) {
 		clearChannelInfo(datum)
 	}
 
-	countQuery := buildChannelListQuery(groupFilter, statusFilter, -1)
+	countQuery := buildChannelListQuery(c, groupFilter, statusFilter, -1)
 	var results []struct {
 		Type  int64
 		Count int64
@@ -281,6 +291,7 @@ func SearchChannels(c *gin.Context) {
 	idSort, _ := strconv.ParseBool(c.Query("id_sort"))
 	sortOptions := model.NewChannelSortOptions(c.Query("sort_by"), c.Query("sort_order"), idSort)
 	enableTagMode, _ := strconv.ParseBool(c.Query("tag_mode"))
+	ownerScope := common.GetContextKeyInt(c, constant.ContextKeyChannelOwnerScope)
 	channelData := make([]*model.Channel, 0)
 	if enableTagMode {
 		tags, err := model.SearchTags(keyword, group, modelKeyword, idSort)
@@ -294,7 +305,7 @@ func SearchChannels(c *gin.Context) {
 		for _, tag := range tags {
 			if tag != nil && *tag != "" {
 				var tagChannels []*model.Channel
-				err := sortOptions.Apply(buildChannelListQuery(group, -1, -1).Where("tag = ?", *tag)).
+				err := sortOptions.Apply(buildChannelListQuery(c, group, -1, -1).Where("tag = ?", *tag)).
 					Omit("key").
 					Find(&tagChannels).Error
 				if err != nil {
@@ -317,6 +328,16 @@ func SearchChannels(c *gin.Context) {
 			return
 		}
 		channelData = channels
+	}
+
+	if ownerScope != 0 {
+		owned := make([]*model.Channel, 0, len(channelData))
+		for _, ch := range channelData {
+			if ch.OwnerId == ownerScope {
+				owned = append(owned, ch)
+			}
+		}
+		channelData = owned
 	}
 
 	if statusFilter == common.ChannelStatusEnabled || statusFilter == 0 {
@@ -624,6 +645,18 @@ func AddChannel(c *gin.Context) {
 			"message": err.Error(),
 		})
 		return
+	}
+
+	// owner_id is server-managed: a supplier owns what it creates, admin-created
+	// channels belong to the platform.
+	ownerScope := common.GetContextKeyInt(c, constant.ContextKeyChannelOwnerScope)
+	addChannelRequest.Channel.OwnerId = ownerScope
+	if ownerScope != 0 {
+		if !operation_setting.IsSupplierChannelNameAllowed(addChannelRequest.Channel.Type, addChannelRequest.Channel.Name) {
+			common.ApiErrorI18n(c, i18n.MsgChannelNameNotAllowed)
+			return
+		}
+		addChannelRequest.BatchAddSetKeyPrefix2Name = false
 	}
 
 	addChannelRequest.Channel.CreatedTime = common.GetTimestamp()
@@ -981,6 +1014,27 @@ func UpdateChannel(c *gin.Context) {
 		})
 		return
 	}
+	ownerScope := common.GetContextKeyInt(c, constant.ContextKeyChannelOwnerScope)
+	if ownerScope != 0 {
+		if originChannel.OwnerId != ownerScope {
+			common.ApiErrorI18n(c, i18n.MsgChannelNotExists)
+			return
+		}
+		// The type may be omitted from a partial update; the name must stay valid
+		// for whichever type the channel ends up with.
+		effectiveType := originChannel.Type
+		if _, ok := requestData["type"]; ok {
+			effectiveType = channel.Type
+		}
+		effectiveName := originChannel.Name
+		if _, ok := requestData["name"]; ok {
+			effectiveName = channel.Name
+		}
+		if !operation_setting.IsSupplierChannelNameAllowed(effectiveType, effectiveName) {
+			common.ApiErrorI18n(c, i18n.MsgChannelNameNotAllowed)
+			return
+		}
+	}
 	originProxy := originChannel.GetSetting().Proxy
 	proxyChanged := false
 	if _, settingProvided := requestData["setting"]; settingProvided {
@@ -992,7 +1046,9 @@ func UpdateChannel(c *gin.Context) {
 	// Always copy the original ChannelInfo so that fields like IsMultiKey and MultiKeySize are retained.
 	channel.ChannelInfo = originChannel.ChannelInfo
 
-	if channelHasSensitiveChanges(&channel, originChannel, requestData) &&
+	// A supplier owns the credentials of its own channels, so the admin
+	// sensitive-write permission only gates the unscoped admin routes.
+	if ownerScope == 0 && channelHasSensitiveChanges(&channel, originChannel, requestData) &&
 		!authz.Can(c.GetInt("id"), c.GetInt("role"), authz.ChannelSensitiveWrite) {
 		common.ApiErrorI18n(c, i18n.MsgAuthInsufficientPrivilege)
 		return
@@ -1280,6 +1336,14 @@ func FetchModels(c *gin.Context) {
 			"message": "Invalid request",
 		})
 		return
+	}
+
+	if ownerScope := common.GetContextKeyInt(c, constant.ContextKeyChannelOwnerScope); ownerScope != 0 && req.ChannelID > 0 {
+		savedChannel, err := model.GetChannelById(req.ChannelID, false)
+		if err != nil || savedChannel.OwnerId != ownerScope {
+			common.ApiErrorI18n(c, i18n.MsgChannelNotExists)
+			return
+		}
 	}
 
 	var channel *model.Channel

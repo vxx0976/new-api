@@ -73,4 +73,8 @@ const (
 	// fallback in authHelper (finishAdminAudit) skips its record to avoid
 	// duplicate entries.
 	ContextKeyAuditLogged ContextKey = "audit_logged"
+
+	// ContextKeyChannelOwnerScope holds the supplier user id that channel
+	// management handlers must restrict themselves to. Unset (0) on admin routes.
+	ContextKeyChannelOwnerScope ContextKey = "channel_owner_scope"
 )

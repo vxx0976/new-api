@@ -43,6 +43,7 @@ export const STATIC_I18N_KEYS = [
   'Integrations',
   'Models',
   'Routing Reliability',
+  'Supplier Channel Names',
   'Maintenance',
 
   // System info
@@ -572,4 +573,21 @@ export const STATIC_I18N_KEYS = [
   'This user account is disabled.',
   'Telegram binding failed. Please try again.',
   'Verification scope is missing',
+
+  // Supplier marketplace (keys passed to t() through constants)
+  'Supplier',
+  'Supplier approved successfully',
+  'Supplier application rejected',
+  'Save channel names',
+  'Select a channel type for every row',
+  'Each channel type can only be listed once',
+  'Enter at least one channel name for every type',
+  'For developers and teams',
+  'For suppliers',
+  'One API key works across every listed model',
+  'Pay as you go with transparent per-model pricing',
+  'Requests are routed across suppliers automatically',
+  'Register with your company and pass platform review',
+  'List channels under the standard names of each channel type',
+  'Manage, test and take your own channels offline at any time',
 ] as const

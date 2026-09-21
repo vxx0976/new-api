@@ -101,6 +101,7 @@ const (
 	MsgUserCannotDemoteRootUser      = "user.cannot_demote_root_user"
 	MsgUserAlreadyAdmin              = "user.already_admin"
 	MsgUserAlreadyCommon             = "user.already_common"
+	MsgUserSupplierNotPending        = "user.supplier_not_pending"
 	MsgUserAdminCannotPromote        = "user.admin_cannot_promote"
 	MsgUserOriginalPasswordError     = "user.original_password_error"
 	MsgUserInviteQuotaInsufficient   = "user.invite_quota_insufficient"
@@ -172,6 +173,7 @@ const (
 
 // Channel related messages
 const (
+	MsgChannelNameNotAllowed     = "channel.name_not_allowed"
 	MsgChannelNotExists          = "channel.not_exists"
 	MsgChannelIdFormatError      = "channel.id_format_error"
 	MsgChannelNoAvailableKey     = "channel.no_available_key"

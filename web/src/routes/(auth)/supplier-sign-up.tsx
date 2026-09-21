@@ -17,32 +17,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
-import { Channels } from '@/features/channels'
-import { ROLE } from '@/lib/roles'
+import { SupplierSignUp } from '@/features/auth/supplier/supplier-sign-up'
 import { useAuthStore } from '@/stores/auth-store'
 
-const channelsSearchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(undefined),
-  filter: z.string().optional().catch(''),
-  status: z.array(z.string()).optional().catch([]),
-  type: z.array(z.string()).optional().catch([]),
-  group: z.array(z.string()).optional().catch([]),
-  model: z.string().optional().catch(''),
-})
-
-export const Route = createFileRoute('/_authenticated/channels/')({
-  beforeLoad: () => {
+export const Route = createFileRoute('/(auth)/supplier-sign-up')({
+  component: SupplierSignUp,
+  beforeLoad: async () => {
     const { auth } = useAuthStore.getState()
 
-    if (!auth.user || auth.user.role < ROLE.SUPPLIER) {
-      throw redirect({
-        to: '/403',
-      })
+    if (auth.user) {
+      throw redirect({ to: '/dashboard' })
     }
   },
-  validateSearch: channelsSearchSchema,
-  component: Channels,
 })

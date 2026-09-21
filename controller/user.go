@@ -269,6 +269,12 @@ func Register(c *gin.Context) {
 		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
 	}
+	// A company name marks a supplier application: the account stays a common
+	// user until an admin approves it.
+	if companyName := strings.TrimSpace(user.CompanyName); companyName != "" {
+		cleanUser.CompanyName = companyName
+		cleanUser.SupplierStatus = common.SupplierStatusPending
+	}
 	if common.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
 	}
@@ -533,6 +539,8 @@ func buildSelfUserData(user *model.User) map[string]interface{} {
 		"linux_do_id":       user.LinuxDOId,
 		"setting":           user.Setting,
 		"stripe_customer":   user.StripeCustomer,
+		"company_name":      user.CompanyName,
+		"supplier_status":   user.SupplierStatus,
 		"sidebar_modules":   userSetting.SidebarModules, // 正确提取sidebar_modules字段
 		"permissions":       permissions,
 	}
@@ -968,6 +976,9 @@ func DeleteUser(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if originUser.Role == common.RoleSupplierUser {
+		takeSupplierChannelsOffline(originUser.Id)
+	}
 	recordManageAuditFor(c, originUser.Id, "user.delete", map[string]interface{}{
 		"username": originUser.Username,
 		"id":       originUser.Id,
@@ -992,6 +1003,9 @@ func DeleteSelf(c *gin.Context) {
 	if err != nil {
 		common.ApiError(c, err)
 		return
+	}
+	if user.Role == common.RoleSupplierUser {
+		takeSupplierChannelsOffline(id)
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -1081,6 +1095,16 @@ type ManageRequest struct {
 	Mode   string `json:"mode"`
 }
 
+// takeSupplierChannelsOffline disables the channels owned by a supplier that was
+// just disabled, demoted or deleted, so its inventory stops serving traffic.
+func takeSupplierChannelsOffline(supplierId int) {
+	if err := model.DisableChannelsByOwner(supplierId); err != nil {
+		common.SysError(fmt.Sprintf("failed to disable channels of supplier %d: %s", supplierId, err.Error()))
+		return
+	}
+	model.InitChannelCache()
+}
+
 // ManageUser Only admin user can do this
 func ManageUser(c *gin.Context) {
 	var req ManageRequest
@@ -1104,6 +1128,7 @@ func ManageUser(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionHigherLevel)
 		return
 	}
+	wasSupplier := user.Role == common.RoleSupplierUser
 	switch req.Action {
 	case "disable":
 		user.Status = common.UserStatusDisabled
@@ -1129,6 +1154,9 @@ func ManageUser(c *gin.Context) {
 		// 避免已缓存的令牌在 TTL 过期前仍能通过 TokenAuth 校验。
 		if err := model.InvalidateUserTokensCache(user.Id); err != nil {
 			common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", user.Id, err.Error()))
+		}
+		if wasSupplier {
+			takeSupplierChannelsOffline(user.Id)
 		}
 		recordManageAuditFor(c, user.Id, "user.manage", map[string]interface{}{
 			"action":   req.Action,
@@ -1159,7 +1187,23 @@ func ManageUser(c *gin.Context) {
 			common.ApiErrorI18n(c, i18n.MsgUserAlreadyCommon)
 			return
 		}
+		if user.Role == common.RoleSupplierUser {
+			user.SupplierStatus = common.SupplierStatusRejected
+		}
 		user.Role = common.RoleCommonUser
+	case "approve_supplier":
+		if user.Role != common.RoleCommonUser || user.SupplierStatus != common.SupplierStatusPending {
+			common.ApiErrorI18n(c, i18n.MsgUserSupplierNotPending)
+			return
+		}
+		user.Role = common.RoleSupplierUser
+		user.SupplierStatus = common.SupplierStatusApproved
+	case "reject_supplier":
+		if user.Role != common.RoleCommonUser || user.SupplierStatus != common.SupplierStatusPending {
+			common.ApiErrorI18n(c, i18n.MsgUserSupplierNotPending)
+			return
+		}
+		user.SupplierStatus = common.SupplierStatusRejected
 	case "add_quota":
 		switch req.Mode {
 		case "add":
@@ -1252,6 +1296,9 @@ func ManageUser(c *gin.Context) {
 	// freshly published auth-version floor.
 	if err := model.InvalidateUserTokensCache(user.Id); err != nil {
 		common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", user.Id, err.Error()))
+	}
+	if wasSupplier && (req.Action == "demote" || req.Action == "disable") {
+		takeSupplierChannelsOffline(user.Id)
 	}
 	recordManageAuditFor(c, user.Id, "user.manage", map[string]interface{}{
 		"action":   req.Action,

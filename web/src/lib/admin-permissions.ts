@@ -79,6 +79,11 @@ export function hasPermission(
 ): boolean {
   if (!user) return false
   if (user.role === ROLE.SUPER_ADMIN) return true
+  // A supplier fully manages the channels it owns (the backend scopes every
+  // request to them) but never reads stored keys back.
+  if (user.role === ROLE.SUPPLIER) {
+    return resource === 'channel' && action !== 'secret_view'
+  }
   return user.permissions?.admin_permissions?.[resource]?.[action] === true
 }
 

@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { getGroups as getUserGroups } from '@/features/users/api'
 import { api, type ApiRequestConfig } from '@/lib/api'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 import type {
   AddChannelRequest,
@@ -39,6 +41,18 @@ import type {
   SearchChannelsResponse,
   TagOperationParams,
 } from './types'
+
+function isSupplierSession(): boolean {
+  return useAuthStore.getState().auth.user?.role === ROLE.SUPPLIER
+}
+
+/**
+ * Suppliers manage their own channels through a dedicated, owner-scoped route
+ * group that mirrors the subset of the admin channel API they may use.
+ */
+function channelApiBase(): string {
+  return isSupplierSession() ? '/api/supplier/channel' : '/api/channel'
+}
 
 const channelActionConfig = (
   config: ApiRequestConfig = {}
@@ -83,7 +97,7 @@ export type CodexCredentialRefreshResponse = {
 export async function getChannels(
   params: GetChannelsParams = {}
 ): Promise<GetChannelsResponse> {
-  const res = await api.get('/api/channel', { params })
+  const res = await api.get(channelApiBase(), { params })
   return res.data
 }
 
@@ -93,7 +107,7 @@ export async function getChannels(
 export async function searchChannels(
   params: SearchChannelsParams
 ): Promise<SearchChannelsResponse> {
-  const res = await api.get('/api/channel/search', { params })
+  const res = await api.get(`${channelApiBase()}/search`, { params })
   return res.data
 }
 
@@ -101,7 +115,7 @@ export async function searchChannels(
  * Get single channel by ID
  */
 export async function getChannel(id: number): Promise<GetChannelResponse> {
-  const res = await api.get(`/api/channel/${id}`)
+  const res = await api.get(`${channelApiBase()}/${id}`)
   return res.data
 }
 
@@ -109,7 +123,7 @@ export async function getChannel(id: number): Promise<GetChannelResponse> {
  * Get channel operations summary for administrators
  */
 export async function getChannelOps(): Promise<ChannelOpsResponse> {
-  const res = await api.get('/api/channel/ops', channelActionConfig())
+  const res = await api.get(`${channelApiBase()}/ops`, channelActionConfig())
   return res.data
 }
 
@@ -120,7 +134,11 @@ export async function getChannelOps(): Promise<ChannelOpsResponse> {
 export async function createChannel(
   data: AddChannelRequest
 ): Promise<{ success: boolean; message?: string }> {
-  const res = await api.post('/api/channel', data, channelActionConfig())
+  const res = await api.post(
+    `${channelApiBase()}/`,
+    data,
+    channelActionConfig()
+  )
   return res.data
 }
 
@@ -132,7 +150,7 @@ export async function updateChannel(
   data: Partial<Channel>
 ): Promise<{ success: boolean; message?: string; data?: Channel }> {
   const res = await api.put(
-    '/api/channel/',
+    `${channelApiBase()}/`,
     { id, ...data },
     channelActionConfig()
   )
@@ -147,7 +165,7 @@ export async function updateChannelStatus(
   status: number
 ): Promise<{ success: boolean; message?: string; data?: boolean }> {
   const res = await api.post(
-    `/api/channel/${id}/status`,
+    `${channelApiBase()}/${id}/status`,
     { status },
     channelActionConfig()
   )
@@ -175,7 +193,10 @@ export async function batchUpdateChannelStatus(
 export async function deleteChannel(
   id: number
 ): Promise<{ success: boolean; message?: string }> {
-  const res = await api.delete(`/api/channel/${id}`, channelActionConfig())
+  const res = await api.delete(
+    `${channelApiBase()}/${id}`,
+    channelActionConfig()
+  )
   return res.data
 }
 
@@ -215,7 +236,7 @@ export async function testChannel(
   params?: { model?: string; endpoint_type?: string; stream?: boolean }
 ): Promise<ChannelTestResponse> {
   const res = await api.get(
-    `/api/channel/test/${id}`,
+    `${channelApiBase()}/test/${id}`,
     channelActionConfig({ params })
   )
   return res.data
@@ -241,7 +262,7 @@ export async function fetchUpstreamModels(
   id: number
 ): Promise<FetchModelsResponse> {
   const res = await api.get(
-    `/api/channel/fetch_models/${id}`,
+    `${channelApiBase()}/fetch_models/${id}`,
     channelActionConfig()
   )
   return res.data
@@ -536,7 +557,7 @@ export async function fetchModels(data: {
   proxy?: string
 }): Promise<FetchModelsResponse> {
   const res = await api.post(
-    '/api/channel/fetch_models',
+    `${channelApiBase()}/fetch_models`,
     data,
     channelActionConfig()
   )
@@ -590,7 +611,7 @@ export async function getAllModels(): Promise<{
   message?: string
   data?: Array<{ id: string; [key: string]: unknown }>
 }> {
-  const res = await api.get('/api/channel/models')
+  const res = await api.get(`${channelApiBase()}/models`)
   return res.data
 }
 
@@ -602,7 +623,7 @@ export async function getEnabledModels(): Promise<{
   message?: string
   data?: string[]
 }> {
-  const res = await api.get('/api/channel/models_enabled')
+  const res = await api.get(`${channelApiBase()}/models_enabled`)
   return res.data
 }
 
@@ -627,7 +648,23 @@ export async function getOllamaVersion(
 /**
  * Get all available groups (re-exported from users API for convenience)
  */
-export const getGroups = getUserGroups
+export async function getGroups(): ReturnType<typeof getUserGroups> {
+  if (!isSupplierSession()) return getUserGroups()
+  const res = await api.get('/api/supplier/channel/groups')
+  return res.data
+}
+
+/**
+ * Channel type -> selectable channel names, configured by the platform.
+ */
+export async function getChannelNameOptions(): Promise<{
+  success: boolean
+  message?: string
+  data?: Record<string, string[]>
+}> {
+  const res = await api.get(`${channelApiBase()}/name_options`)
+  return res.data
+}
 
 // ============================================================================
 // Prefill Groups (Model Groups)
@@ -643,6 +680,8 @@ export async function getPrefillGroups(
   message?: string
   data?: Array<{ id: number; name: string; items: string | string[] }>
 }> {
+  // Prefill groups are an admin-side convenience that suppliers cannot read.
+  if (isSupplierSession()) return { success: true, data: [] }
   const res = await api.get('/api/prefill_group', { params: { type } })
   return res.data
 }

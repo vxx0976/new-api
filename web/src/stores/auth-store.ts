@@ -52,6 +52,9 @@ export interface AuthUser {
   setting?: Record<string, unknown> | string
   stripe_customer?: string
   sidebar_modules?: string
+  company_name?: string
+  /** 0 none, 1 pending, 2 approved, 3 rejected */
+  supplier_status?: number
   permissions?: UserPermissions
 }
 

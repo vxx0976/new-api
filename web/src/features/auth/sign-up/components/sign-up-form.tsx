@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -54,11 +55,18 @@ import { isAuthBundle } from '@/lib/api'
 import { getServerErrorMessageKey } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
+type SignUpFormProps = React.HTMLAttributes<HTMLFormElement> & {
+  /** Register a supplier application: asks for the company name. */
+  supplier?: boolean
+}
+
 export function SignUpForm({
   className,
+  supplier = false,
   ...props
-}: React.HTMLAttributes<HTMLFormElement>) {
+}: SignUpFormProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
   const [agreedToLegal, setAgreedToLegal] = useState(false)
@@ -94,6 +102,7 @@ export function SignUpForm({
       email: '',
       password: '',
       confirmPassword: '',
+      companyName: '',
     },
   })
 
@@ -156,11 +165,20 @@ export function SignUpForm({
       }
     }
 
+    const companyName = data.companyName?.trim()
+    if (supplier && !companyName) {
+      form.setError('companyName', {
+        message: t('Please enter your company name'),
+      })
+      return
+    }
+
     if (!validateTurnstile()) return
 
     setIsLoading(true)
     try {
       const res = await register({
+        company_name: supplier ? companyName : undefined,
         username: data.username,
         password: data.password,
         email: data.email || undefined,
@@ -170,8 +188,17 @@ export function SignUpForm({
       })
 
       if (res?.success) {
-        toast.success(t('Account created! Please sign in'))
-        redirectToLogin()
+        if (supplier) {
+          toast.success(
+            t(
+              'Application submitted. Supplier features unlock once the platform approves it.'
+            )
+          )
+          navigate({ to: '/supplier-sign-in', replace: true })
+        } else {
+          toast.success(t('Account created! Please sign in'))
+          redirectToLogin()
+        }
       } else {
         toast.error(res?.message || t('Failed to create account'))
       }
@@ -247,6 +274,25 @@ export function SignUpForm({
         className={cn('grid gap-4', className)}
         {...props}
       >
+        {supplier && (
+          <FormField
+            control={form.control}
+            name='companyName'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Company name')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('Enter your company name')}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
         {/* Username Field */}
         <FormField
           control={form.control}
@@ -378,7 +424,7 @@ export function SignUpForm({
           {t('Create account')}
         </Button>
 
-        {oauthRegisterEnabled && (
+        {oauthRegisterEnabled && !supplier && (
           <OAuthProviders
             status={status}
             disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}

@@ -33,6 +33,8 @@ export const userRoleSchema = z.number()
 export type UserRole = z.infer<typeof userRoleSchema>
 
 export const userSchema = z.object({
+  company_name: z.string().optional(),
+  supplier_status: z.number().optional(),
   id: z.number(),
   username: z.string(),
   display_name: z.string(),
@@ -135,6 +137,8 @@ export type ManageUserAction =
   | 'disable'
   | 'delete'
   | 'add_quota'
+  | 'approve_supplier'
+  | 'reject_supplier'
 
 export type QuotaAdjustMode = 'add' | 'subtract' | 'override'
 

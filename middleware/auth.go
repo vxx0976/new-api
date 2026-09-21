@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -98,6 +99,39 @@ func UserAuth() func(c *gin.Context) {
 func AdminAuth() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		authHelper(c, common.RoleAdminUser)
+	}
+}
+
+func SupplierAuth() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		authHelper(c, common.RoleSupplierUser)
+	}
+}
+
+// SupplierChannelScope must run after SupplierAuth. It admits suppliers only and
+// scopes the shared channel handlers to the channels they own; routes with an
+// :id param are rejected here when the channel belongs to someone else.
+func SupplierChannelScope() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		if c.GetInt("role") != common.RoleSupplierUser {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "message": common.TranslateMessage(c, i18n.MsgAuthInsufficientPrivilege)})
+			return
+		}
+		ownerId := c.GetInt("id")
+		common.SetContextKey(c, constant.ContextKeyChannelOwnerScope, ownerId)
+		if idParam := c.Param("id"); idParam != "" {
+			channelId, err := strconv.Atoi(idParam)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, gin.H{"success": false, "message": common.TranslateMessage(c, i18n.MsgInvalidParams)})
+				return
+			}
+			channel, err := model.GetChannelById(channelId, false)
+			if err != nil || channel.OwnerId != ownerId {
+				c.AbortWithStatusJSON(http.StatusOK, gin.H{"success": false, "message": common.TranslateMessage(c, i18n.MsgChannelNotExists)})
+				return
+			}
+		}
+		c.Next()
 	}
 }
 

@@ -24,6 +24,8 @@ import {
   PowerOff,
   ArrowUp,
   ArrowDown,
+  BadgeCheck,
+  Ban,
   KeyRound,
   ShieldAlert,
   Link2,
@@ -51,6 +53,7 @@ import { UserSubscriptionsDialog } from '@/features/subscriptions/components/dia
 import { manageUser, resetUserPasskey, resetUserTwoFA } from '../api'
 import {
   USER_STATUS,
+  SUPPLIER_STATUS,
   USER_ROLE,
   ERROR_MESSAGES,
   isUserDeleted,
@@ -134,6 +137,10 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const isDisabled = user.status === USER_STATUS.DISABLED
   const isAdmin = user.role >= USER_ROLE.ADMIN
   const isRoot = user.role === USER_ROLE.ROOT
+  const isSupplier = user.role === USER_ROLE.SUPPLIER
+  const isPendingSupplier =
+    user.role === USER_ROLE.USER &&
+    user.supplier_status === SUPPLIER_STATUS.PENDING
 
   if (isUserDeleted(user)) {
     return null
@@ -183,6 +190,32 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         {isAdmin && !isRoot && (
           <DropdownMenuItem onClick={() => handleManage('demote')}>
             {t('Demote')}
+            <DropdownMenuShortcut>
+              <ArrowDown size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        )}
+
+        {isPendingSupplier && (
+          <>
+            <DropdownMenuItem onClick={() => handleManage('approve_supplier')}>
+              {t('Approve Supplier')}
+              <DropdownMenuShortcut>
+                <BadgeCheck size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleManage('reject_supplier')}>
+              {t('Reject Supplier')}
+              <DropdownMenuShortcut>
+                <Ban size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {isSupplier && (
+          <DropdownMenuItem onClick={() => handleManage('demote')}>
+            {t('Revoke Supplier')}
             <DropdownMenuShortcut>
               <ArrowDown size={16} />
             </DropdownMenuShortcut>
