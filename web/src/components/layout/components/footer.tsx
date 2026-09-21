@@ -48,6 +48,42 @@ const NEW_API_FOOTER_ATTRIBUTION_KEY = [
   'projectAttributionSuffix',
 ].join('.')
 
+// Operator, hotline and filing number. Sites hosted in mainland China must
+// show the ICP filing on every public page, so this renders in both the
+// custom-HTML and the default footer branch.
+function ComplianceInfo() {
+  const { t } = useTranslation()
+  const { icpRecord, sponsorUnit, serviceHotline } = useSystemConfig()
+  const hasAny = Boolean(icpRecord || sponsorUnit || serviceHotline)
+  if (!hasAny) {
+    return null
+  }
+  return (
+    <div className='text-muted-foreground/55 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs'>
+      {sponsorUnit && (
+        <span>
+          {t('Operated by')}: {sponsorUnit}
+        </span>
+      )}
+      {serviceHotline && (
+        <span>
+          {t('Service hotline')}: {serviceHotline}
+        </span>
+      )}
+      {icpRecord && (
+        <a
+          href='https://beian.miit.gov.cn'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='hover:text-foreground transition-colors'
+        >
+          {icpRecord}
+        </a>
+      )}
+    </div>
+  )
+}
+
 function FooterLinkItem(props: { link: FooterLink }) {
   const { t } = useTranslation()
   const isExternal = props.link.href.startsWith('http')
@@ -241,6 +277,9 @@ export function Footer(props: FooterProps) {
               <ProjectAttribution currentYear={currentYear} inline />
             </div>
           </div>
+          <div className='mt-4'>
+            <ComplianceInfo />
+          </div>
         </div>
       </footer>
     )
@@ -301,6 +340,10 @@ export function Footer(props: FooterProps) {
             <LegalLinks leadingSeparator />
           </div>
           <ProjectAttribution currentYear={currentYear} />
+        </div>
+
+        <div className='mt-4'>
+          <ComplianceInfo />
         </div>
       </div>
     </footer>

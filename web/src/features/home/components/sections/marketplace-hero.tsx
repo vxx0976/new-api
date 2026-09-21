@@ -41,8 +41,8 @@ export function MarketplaceHero(props: MarketplaceHeroProps) {
         className='pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-[0.12]'
         style={{
           background: [
-            'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.62 0.19 25 / 70%) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.72 0.14 70 / 55%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.55 0.15 257 / 45%) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.62 0.12 225 / 35%) 0%, transparent 70%)',
           ].join(', '),
         }}
       />
@@ -61,7 +61,7 @@ export function MarketplaceHero(props: MarketplaceHeroProps) {
           <h1 className='landing-animate-fade-up text-[clamp(2.25rem,4.5vw,3.25rem)] leading-[1.15] font-bold tracking-tight'>
             {t('One marketplace for')}
             <br />
-            <span className='from-primary bg-gradient-to-r to-amber-500 bg-clip-text text-transparent'>
+            <span className='text-primary'>
               {t('AI model capacity from many suppliers')}
             </span>
           </h1>

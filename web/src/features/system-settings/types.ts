@@ -111,6 +111,9 @@ export type SiteSettings = {
   SystemName: string
   Logo: string
   Footer: string
+  ICPRecord: string
+  SponsorUnit: string
+  ServiceHotline: string
   About: string
   HomePageContent: string
   ServerAddress: string

@@ -343,6 +343,25 @@ export function usePricingColumns(
       enableSorting: false,
     },
 
+    // Supplier column
+    {
+      accessorKey: 'suppliers',
+      header: t('Supplier'),
+      cell: ({ row }) => {
+        const suppliers = row.original.suppliers || []
+        if (suppliers.length === 0) {
+          return <span className='text-muted-foreground/50 text-xs'>—</span>
+        }
+        return (
+          <span className='block truncate text-sm' title={suppliers.join(', ')}>
+            {suppliers.join(', ')}
+          </span>
+        )
+      },
+      size: 130,
+      enableSorting: false,
+    },
+
     // Tags column
     {
       accessorKey: 'tags',

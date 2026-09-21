@@ -5361,6 +5361,18 @@
     "Requests are routed across suppliers automatically": "Requests are routed across suppliers automatically",
     "Register with your company and pass platform review": "Register with your company and pass platform review",
     "List channels under the standard names of each channel type": "List channels under the standard names of each channel type",
-    "Manage, test and take your own channels offline at any time": "Manage, test and take your own channels offline at any time"
+    "Manage, test and take your own channels offline at any time": "Manage, test and take your own channels offline at any time",
+    "Operated by": "Operated by",
+    "Service hotline": "Service hotline",
+    "Back to top": "Back to top",
+    "Supplied by": "Supplied by",
+    "Operating organization": "Operating organization",
+    "Name of the operating organization": "Name of the operating organization",
+    "Shown in the footer of every public page": "Shown in the footer of every public page",
+    "Shown in the footer and the side service rail": "Shown in the footer and the side service rail",
+    "ICP filing number": "ICP filing number",
+    "e.g. 京ICP备00000000号": "e.g. 京ICP备00000000号",
+    "Required on public pages for sites hosted in mainland China. Links to beian.miit.gov.cn.": "Required on public pages for sites hosted in mainland China. Links to beian.miit.gov.cn.",
+    "Dismiss": "Dismiss"
   }
 }

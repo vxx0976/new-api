@@ -14,6 +14,12 @@ var StartTime = time.Now().Unix() // unit: second
 var Version = "v0.0.0"            // this hard coding will be replaced automatically when building, no need to manually change
 var SystemName = "New API"
 var Footer = ""
+
+// Filing and operator details required on public pages of sites hosted in
+// mainland China.
+var ICPRecord = ""
+var SponsorUnit = ""
+var ServiceHotline = ""
 var Logo = ""
 var TopUpLink = ""
 

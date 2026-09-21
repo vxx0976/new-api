@@ -16,8 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useSiteAnnouncement } from '@/hooks/use-site-announcement'
+import { cn } from '@/lib/utils'
+
 import type { TopNavLink } from '../types'
+import { AnnouncementBanner } from './announcement-banner'
+import { Footer } from './footer'
 import { PublicHeader, type PublicHeaderProps } from './public-header'
+import { ServiceRail } from './service-rail'
 
 type PublicLayoutProps = {
   children: React.ReactNode
@@ -30,9 +36,13 @@ type PublicLayoutProps = {
   showNotifications?: boolean
   logo?: React.ReactNode
   siteName?: string
+  /** Pages that compose their own footer opt out of the shared one. */
+  showFooter?: boolean
 }
 
 export function PublicLayout(props: PublicLayoutProps) {
+  const { announcement, dismiss } = useSiteAnnouncement()
+
   return (
     <div className='bg-background text-foreground relative min-h-svh overflow-x-clip'>
       <PublicHeader
@@ -46,13 +56,29 @@ export function PublicLayout(props: PublicLayoutProps) {
         {...props.headerProps}
       />
 
+      {/* Sits below the fixed header, so it needs the header's own height. */}
+      {announcement && (
+        <div className='pt-16'>
+          <AnnouncementBanner announcement={announcement} onDismiss={dismiss} />
+        </div>
+      )}
+
       {props.showMainContainer !== false ? (
-        <main className='container px-4 py-6 pt-20 md:px-4'>
+        <main
+          className={cn(
+            'container px-4 py-6 md:px-4',
+            !announcement && 'pt-20'
+          )}
+        >
           {props.children}
         </main>
       ) : (
         props.children
       )}
+
+      <ServiceRail />
+
+      {props.showFooter !== false && <Footer />}
     </div>
   )
 }

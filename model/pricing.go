@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"sync"
@@ -32,6 +33,7 @@ type Pricing struct {
 	AudioRatio             *float64                `json:"audio_ratio,omitempty"`
 	AudioCompletionRatio   *float64                `json:"audio_completion_ratio,omitempty"`
 	EnableGroup            []string                `json:"enable_groups"`
+	Suppliers              []string                `json:"suppliers,omitempty"`
 	SupportedEndpointTypes []constant.EndpointType `json:"supported_endpoint_types"`
 	BillingMode            string                  `json:"billing_mode,omitempty"`
 	BillingExpr            string                  `json:"billing_expr,omitempty"`
@@ -259,6 +261,9 @@ func updatePricing() {
 	}
 
 	modelGroupsMap := make(map[string]*types.Set[string])
+	// 模型 -> 供应商用户 id 集合（owner_id = 0 表示平台自营，不计入供应商）
+	modelOwnerIdsMap := make(map[string]*types.Set[int])
+	allOwnerIds := types.NewSet[int]()
 
 	for _, ability := range enableAbilities {
 		groups, ok := modelGroupsMap[ability.Model]
@@ -267,6 +272,33 @@ func updatePricing() {
 			modelGroupsMap[ability.Model] = groups
 		}
 		groups.Add(ability.Group)
+
+		if ability.OwnerId == 0 {
+			continue
+		}
+		ownerIds, ok := modelOwnerIdsMap[ability.Model]
+		if !ok {
+			ownerIds = types.NewSet[int]()
+			modelOwnerIdsMap[ability.Model] = ownerIds
+		}
+		ownerIds.Add(ability.OwnerId)
+		allOwnerIds.Add(ability.OwnerId)
+	}
+
+	// 一次性批量查询供应商公司名
+	ownerCompanyNames := make(map[int]string)
+	if allOwnerIds.Len() > 0 {
+		var suppliers []User
+		if err := DB.Model(&User{}).
+			Select("id", "company_name").
+			Where("id IN ?", allOwnerIds.Items()).
+			Where("company_name <> ?", "").
+			Find(&suppliers).Error; err != nil {
+			common.SysLog(fmt.Sprintf("load supplier company names error: %v", err))
+		}
+		for _, supplier := range suppliers {
+			ownerCompanyNames[supplier.Id] = supplier.CompanyName
+		}
 	}
 
 	//这里使用切片而不是Set，因为一个模型可能支持多个端点类型，并且第一个端点是优先使用端点
@@ -360,6 +392,20 @@ func updatePricing() {
 			ModelName:              model,
 			EnableGroup:            groups.Items(),
 			SupportedEndpointTypes: modelSupportEndpointTypes[model],
+		}
+
+		if ownerIds, ok := modelOwnerIdsMap[model]; ok {
+			supplierNames := types.NewSet[string]()
+			for _, ownerId := range ownerIds.Items() {
+				if companyName, ok := ownerCompanyNames[ownerId]; ok {
+					supplierNames.Add(companyName)
+				}
+			}
+			if supplierNames.Len() > 0 {
+				names := supplierNames.Items()
+				sort.Strings(names)
+				pricing.Suppliers = names
+			}
 		}
 
 		// 补充模型元数据（描述、标签、供应商、状态）

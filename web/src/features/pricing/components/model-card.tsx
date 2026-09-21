@@ -59,6 +59,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const tags = parseTags(props.model.tags)
   const groups = props.model.enable_groups || []
   const endpoints = props.model.supported_endpoint_types || []
+  // Which approved suppliers actually serve this model; empty for
+  // platform-operated models.
+  const supplierLabel = (props.model.suppliers ?? []).join('、')
   const modelIconKey = props.model.icon || props.model.vendor_icon
   const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 28) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
@@ -254,6 +257,14 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </span>
           )}
           <ModelBillingModeBadge model={props.model} />
+          {supplierLabel && (
+            <span
+              className='text-muted-foreground/70 min-w-0 truncate text-xs'
+              title={supplierLabel}
+            >
+              {t('Supplied by')}: {supplierLabel}
+            </span>
+          )}
         </div>
         <ModelPerfBadge perf={props.perf} className='row-span-2 self-start' />
 

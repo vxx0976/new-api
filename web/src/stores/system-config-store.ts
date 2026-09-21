@@ -42,6 +42,11 @@ export interface SystemConfig {
   systemName: string
   logo: string
   footerHtml?: string
+  /** Mainland-China filing number shown on every public page. */
+  icpRecord?: string
+  /** Operating organization named on every public page. */
+  sponsorUnit?: string
+  serviceHotline?: string
   demoSiteEnabled?: boolean
   displayTokenStatEnabled?: boolean
   currency: CurrencyConfig

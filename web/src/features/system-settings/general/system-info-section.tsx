@@ -50,6 +50,9 @@ const _systemInfoSchema = z.object({
   ServerAddress: z.string().optional(),
   Logo: z.string().url().optional().or(z.literal('')),
   Footer: z.string().optional(),
+  ICPRecord: z.string().optional(),
+  SponsorUnit: z.string().optional(),
+  ServiceHotline: z.string().optional(),
   About: z.string().optional(),
   HomePageContent: z.string().optional(),
   legal: z.object({
@@ -78,6 +81,9 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
     Logo: normalizeValue(defaultValues.Logo),
     Footer: normalizeValue(defaultValues.Footer),
+    ICPRecord: normalizeValue(defaultValues.ICPRecord),
+    SponsorUnit: normalizeValue(defaultValues.SponsorUnit),
+    ServiceHotline: normalizeValue(defaultValues.ServiceHotline),
     About: normalizeValue(defaultValues.About),
     HomePageContent: normalizeValue(defaultValues.HomePageContent),
     legal: {
@@ -93,6 +99,9 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: z.string().optional(),
     Logo: z.string().url().optional().or(z.literal('')),
     Footer: z.string().optional(),
+    ICPRecord: z.string().optional(),
+    SponsorUnit: z.string().optional(),
+    ServiceHotline: z.string().optional(),
     About: z.string().optional(),
     HomePageContent: z.string().optional(),
     legal: z.object({
@@ -211,6 +220,65 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t('Footer text displayed at the bottom of pages')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='SponsorUnit'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Operating organization')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('Name of the operating organization')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t('Shown in the footer of every public page')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='ServiceHotline'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Service hotline')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder='400-000-0000' {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {t('Shown in the footer and the side service rail')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='ICPRecord'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('ICP filing number')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t('e.g. 京ICP备00000000号')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Required on public pages for sites hosted in mainland China. Links to beian.miit.gov.cn.'
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
