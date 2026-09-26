@@ -47,6 +47,10 @@ export interface SystemConfig {
   /** Operating organization named on every public page. */
   sponsorUnit?: string
   serviceHotline?: string
+  /** Horizontal brand lockup that replaces the square logo and site name. */
+  logoWide?: string
+  /** Lockup for dark mode; falls back to `logoWide` when unset. */
+  logoWideDark?: string
   demoSiteEnabled?: boolean
   displayTokenStatEnabled?: boolean
   currency: CurrencyConfig

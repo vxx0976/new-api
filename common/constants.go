@@ -20,6 +20,11 @@ var Footer = ""
 var ICPRecord = ""
 var SponsorUnit = ""
 var ServiceHotline = ""
+
+// Horizontal brand lockup (mark + wordmark as one image) shown in place of the
+// square logo and site name. The dark variant is optional.
+var LogoWide = ""
+var LogoWideDark = ""
 var Logo = ""
 var TopUpLink = ""
 

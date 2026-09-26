@@ -44,13 +44,16 @@ import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useSettingsForm } from '../hooks/use-settings-form'
 import { useUpdateOption } from '../hooks/use-update-option'
+import { siteImageUrlSchema } from '../utils/image-url-field'
 import { isValidTaskPublicAddress } from './task-public-address'
 
 const _systemInfoSchema = z.object({
   SystemName: z.string().min(1),
   ServerAddress: z.string().optional(),
   TaskPublicAddress: z.string().refine(isValidTaskPublicAddress),
-  Logo: z.string().url().optional().or(z.literal('')),
+  Logo: siteImageUrlSchema,
+  LogoWide: siteImageUrlSchema,
+  LogoWideDark: siteImageUrlSchema,
   Footer: z.string().optional(),
   ICPRecord: z.string().optional(),
   SponsorUnit: z.string().optional(),
@@ -86,6 +89,8 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
     TaskPublicAddress: normalizeValue(defaultValues.TaskPublicAddress),
     Logo: normalizeValue(defaultValues.Logo),
+    LogoWide: normalizeValue(defaultValues.LogoWide),
+    LogoWideDark: normalizeValue(defaultValues.LogoWideDark),
     Footer: normalizeValue(defaultValues.Footer),
     ICPRecord: normalizeValue(defaultValues.ICPRecord),
     SponsorUnit: normalizeValue(defaultValues.SponsorUnit),
@@ -112,7 +117,9 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
           'Enter an absolute HTTP(S) URL without credentials, query parameters, or fragments'
         ),
     }),
-    Logo: z.string().url().optional().or(z.literal('')),
+    Logo: siteImageUrlSchema,
+    LogoWide: siteImageUrlSchema,
+    LogoWideDark: siteImageUrlSchema,
     Footer: z.string().optional(),
     ICPRecord: z.string().optional(),
     SponsorUnit: z.string().optional(),
@@ -237,6 +244,46 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                     </FormControl>
                     <FormDescription>
                       {t('URL to your logo image (optional)')}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='LogoWide'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Horizontal logo URL')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder='/logo-wide.svg' {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Logo with the brand wordmark, shown instead of the logo and site name. Leave empty to show the logo and site name.'
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='LogoWideDark'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('Horizontal logo URL (dark mode)')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder='/logo-wide-dark.svg' {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        'Optional. A version that reads on dark backgrounds; the horizontal logo is used when empty.'
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

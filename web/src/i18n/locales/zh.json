@@ -2616,7 +2616,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "相关项目",
     "footer.defaultCopyright": "版权所有。",
-    "footer.newapi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
+    "footer.new\u0061pi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
     "For advanced custom channels this applies only to /v1/responses routes without protocol conversion.": "高级自定义渠道仅对 /v1/responses 且不做协议转换的路由生效。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "对于 2025 年 5 月 10 日之后添加的渠道，在部署时无需从模型名称中移除 \".\"",
     "For private deployments, format: https://fastgpt.run/api/openapi": "对于私有部署，格式为：https://fastgpt.run/api/openapi",
@@ -6832,6 +6832,10 @@
     "Your supplier application is under review": "您的供应商申请正在审核中",
     "Your supplier application was not approved": "您的供应商申请未通过",
     "You can use the platform as a regular user in the meantime. Once approved, \"My Channels\" appears in the sidebar and you can list channels.": "审核期间您可以作为普通用户正常使用平台。审核通过后，左侧菜单会出现「我的渠道」，即可上架渠道。",
-    "Contact the platform administrator if you would like your application reconsidered.": "如需重新审核，请联系平台管理员。"
+    "Contact the platform administrator if you would like your application reconsidered.": "如需重新审核，请联系平台管理员。",
+    "Horizontal logo URL": "横版 Logo 地址",
+    "Horizontal logo URL (dark mode)": "横版 Logo 地址（深色模式）",
+    "Logo with the brand wordmark, shown instead of the logo and site name. Leave empty to show the logo and site name.": "带品牌字标的横版 Logo，配置后替代「Logo + 站点名称」显示；留空则显示 Logo 和站点名称。",
+    "Optional. A version that reads on dark backgrounds; the horizontal logo is used when empty.": "可选。适合深色背景的版本；留空则深色模式也使用上面的横版 Logo。"
   }
 }

@@ -81,6 +81,8 @@ func InitOptionMap() {
 	common.OptionMap["ICPRecord"] = common.ICPRecord
 	common.OptionMap["SponsorUnit"] = common.SponsorUnit
 	common.OptionMap["ServiceHotline"] = common.ServiceHotline
+	common.OptionMap["LogoWide"] = common.LogoWide
+	common.OptionMap["LogoWideDark"] = common.LogoWideDark
 	common.OptionMap["SystemName"] = common.SystemName
 	common.OptionMap["Logo"] = common.Logo
 	common.OptionMap["ServerAddress"] = ""
@@ -593,6 +595,10 @@ func updateOptionMap(key string, value string) (err error) {
 		common.SponsorUnit = value
 	case "ServiceHotline":
 		common.ServiceHotline = value
+	case "LogoWide":
+		common.LogoWide = value
+	case "LogoWideDark":
+		common.LogoWideDark = value
 	case "SystemName":
 		common.SystemName = value
 	case "Logo":

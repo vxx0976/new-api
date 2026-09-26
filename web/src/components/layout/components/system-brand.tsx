@@ -28,6 +28,8 @@ import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { cn } from '@/lib/utils'
 
+import { BrandLockup } from './brand-lockup'
+
 type SystemBrandProps = {
   defaultName?: string
   defaultVersion?: string
@@ -65,14 +67,21 @@ export function SystemBrand(props: SystemBrandProps) {
           'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <div className='flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-md'>
-          <img
-            src={logo}
-            alt={t('Logo')}
-            className='size-full rounded-md object-cover'
-          />
-        </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
+        <BrandLockup
+          className='h-5'
+          fallback={
+            <>
+              <div className='flex size-5 shrink-0 items-center justify-center overflow-hidden rounded-md'>
+                <img
+                  src={logo}
+                  alt={t('Logo')}
+                  className='size-full rounded-md object-cover'
+                />
+              </div>
+              <span className='max-w-[12rem] truncate'>{name}</span>
+            </>
+          }
+        />
       </Link>
     )
   }

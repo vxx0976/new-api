@@ -98,6 +98,8 @@ export function mapStatusDataToConfig(
     icpRecord: data.icp_record as string | undefined,
     sponsorUnit: data.sponsor_unit as string | undefined,
     serviceHotline: data.service_hotline as string | undefined,
+    logoWide: data.logo_wide as string | undefined,
+    logoWideDark: data.logo_wide_dark as string | undefined,
     demoSiteEnabled: data.demo_site_enabled as boolean | undefined,
     displayTokenStatEnabled: data.display_token_stat_enabled as
       | boolean

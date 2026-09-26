@@ -144,6 +144,8 @@ export type SiteSettings = {
   Notice: string
   SystemName: string
   Logo: string
+  LogoWide: string
+  LogoWideDark: string
   Footer: string
   ICPRecord: string
   SponsorUnit: string

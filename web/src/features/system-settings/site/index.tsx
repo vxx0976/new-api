@@ -28,6 +28,8 @@ const defaultSiteSettings: SiteSettings = {
   Notice: '',
   SystemName: 'New API',
   Logo: '',
+  LogoWide: '',
+  LogoWideDark: '',
   Footer: '',
   ICPRecord: '',
   SponsorUnit: '',

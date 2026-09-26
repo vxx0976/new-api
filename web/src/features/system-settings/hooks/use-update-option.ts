@@ -34,6 +34,8 @@ const STATUS_RELATED_KEYS = new Set([
   'ICPRecord',
   'SponsorUnit',
   'ServiceHotline',
+  'LogoWide',
+  'LogoWideDark',
   'LogConsumeEnabled',
   'QuotaPerUnit',
   'USDExchangeRate',

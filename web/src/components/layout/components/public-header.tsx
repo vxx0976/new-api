@@ -36,6 +36,7 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
+import { BrandLockup } from './brand-lockup'
 import { HeaderLogo } from './header-logo'
 
 const AUTH_PROMPT_SECONDS = 5
@@ -109,6 +110,22 @@ export function PublicHeader(props: PublicHeaderProps) {
   )
   if (customLogo) logoContent = customLogo
   if (loading) logoContent = <Skeleton className='size-full rounded-lg' />
+
+  // Square logo and site name. A page-supplied logo keeps this; otherwise the
+  // configured horizontal lockup replaces it.
+  const brandMark = (
+    <>
+      <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+        {logoContent}
+      </div>
+      <span
+        className='max-w-48 truncate text-sm font-semibold tracking-tight'
+        title={displaySiteName}
+      >
+        {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
+      </span>
+    </>
+  )
 
   let authContent = (
     <Button
@@ -220,19 +237,14 @@ export function PublicHeader(props: PublicHeaderProps) {
                 to={homeUrl}
                 className='group flex min-w-0 items-center gap-2.5'
               >
-                <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
-                  {logoContent}
-                </div>
-                <span
-                  className='max-w-48 truncate text-sm font-semibold tracking-tight'
-                  title={displaySiteName}
-                >
-                  {loading ? (
-                    <Skeleton className='h-4 w-16' />
-                  ) : (
-                    displaySiteName
-                  )}
-                </span>
+                {customLogo ? (
+                  brandMark
+                ) : (
+                  <BrandLockup
+                    className='h-7 transition-transform duration-300 group-hover:scale-105'
+                    fallback={brandMark}
+                  />
+                )}
               </Link>
               <SystemUpdateAction presentation='version' />
             </div>

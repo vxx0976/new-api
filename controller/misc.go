@@ -71,6 +71,8 @@ func GetStatus(c *gin.Context) {
 		"icp_record":                  common.ICPRecord,
 		"sponsor_unit":                common.SponsorUnit,
 		"service_hotline":             common.ServiceHotline,
+		"logo_wide":                   common.LogoWide,
+		"logo_wide_dark":              common.LogoWideDark,
 		"wechat_qrcode":               common.WeChatAccountQRCodeImageURL,
 		"wechat_login":                common.WeChatAuthEnabled,
 		"server_address":              system_setting.ServerAddress,
